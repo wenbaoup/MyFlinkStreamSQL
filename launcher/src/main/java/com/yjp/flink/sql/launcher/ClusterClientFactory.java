@@ -19,14 +19,13 @@
 package com.yjp.flink.sql.launcher;
 
 import com.yjp.flink.sql.ClusterMode;
+import com.yjp.flink.sql.options.LauncherOptions;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.client.deployment.StandaloneClusterDescriptor;
 import org.apache.flink.client.deployment.StandaloneClusterId;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.ConfigConstants;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.core.fs.FileSystem;
@@ -68,7 +67,7 @@ public class ClusterClientFactory {
 
     public static ClusterClient createStandaloneClient(LauncherOptions launcherOptions) throws Exception {
         String flinkConfDir = launcherOptions.getFlinkconf();
-        Configuration config = GlobalConfiguration.loadConfiguration(flinkConfDir);
+        org.apache.flink.configuration.Configuration config = GlobalConfiguration.loadConfiguration(flinkConfDir);
 
         StandaloneClusterDescriptor standaloneClusterDescriptor = new StandaloneClusterDescriptor(config);
         RestClusterClient clusterClient = standaloneClusterDescriptor.retrieve(StandaloneClusterId.getInstance());
@@ -83,7 +82,7 @@ public class ClusterClientFactory {
 
     public static ClusterClient createYarnClient(LauncherOptions launcherOptions) {
         String flinkConfDir = launcherOptions.getFlinkconf();
-        Configuration config = GlobalConfiguration.loadConfiguration(flinkConfDir);
+        org.apache.flink.configuration.Configuration config = GlobalConfiguration.loadConfiguration(flinkConfDir);
         String yarnConfDir = launcherOptions.getYarnconf();
         if (StringUtils.isNotBlank(yarnConfDir)) {
 

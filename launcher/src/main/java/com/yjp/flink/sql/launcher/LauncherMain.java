@@ -21,10 +21,11 @@ package com.yjp.flink.sql.launcher;
 
 import avro.shaded.com.google.common.collect.Lists;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.yjp.flink.sql.ClusterMode;
 import com.yjp.flink.sql.Main;
 import com.yjp.flink.sql.launcher.perjob.PerJobSubmitter;
+import com.yjp.flink.sql.options.LauncherOptionParser;
+import com.yjp.flink.sql.options.LauncherOptions;
 import com.yjp.flink.sql.util.PluginUtil;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -122,7 +123,7 @@ public class LauncherMain {
                 }
             }
         }
-        Map<String, Object> map = JSON.parseObject(lastStr, new TypeReference<Map<String, Object>>() {
+        Map<String, Object> map = JSON.parseObject(lastStr, new com.alibaba.fastjson.TypeReference<Map<String, Object>>() {
         });
         List<String> list = new LinkedList<>();
 

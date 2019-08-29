@@ -18,7 +18,7 @@
 
 package com.yjp.flink.sql.launcher.perjob;
 
-import com.yjp.flink.sql.launcher.LauncherOptions;
+import com.yjp.flink.sql.options.LauncherOptions;
 import com.yjp.flink.sql.util.PluginUtil;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;

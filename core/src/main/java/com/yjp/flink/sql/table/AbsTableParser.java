@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.table;
 
 import com.yjp.flink.sql.util.ClassUtil;
-import com.yjp.flink.sql.util.DtStringUtil;
+import com.yjp.flink.sql.util.YjpStringUtil;
 import org.apache.flink.calcite.shaded.com.google.common.collect.Lists;
 import org.apache.flink.shaded.curator.org.apache.curator.shaded.com.google.common.collect.Maps;
 
@@ -34,6 +33,7 @@ import java.util.regex.Pattern;
  * Reason:
  * Date: 2018/7/4
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -58,14 +58,14 @@ public abstract class AbsTableParser {
 
     public abstract TableInfo getTableInfo(String tableName, String fieldsInfo, Map<String, Object> props) throws Exception;
 
-    public boolean dealKeyPattern(String fieldRow, TableInfo tableInfo){
-        for(Map.Entry<String, Pattern> keyPattern : keyPatternMap.entrySet()){
+    public boolean dealKeyPattern(String fieldRow, TableInfo tableInfo) {
+        for (Map.Entry<String, Pattern> keyPattern : keyPatternMap.entrySet()) {
             Pattern pattern = keyPattern.getValue();
             String key = keyPattern.getKey();
             Matcher matcher = pattern.matcher(fieldRow);
-            if(matcher.find()){
+            if (matcher.find()) {
                 ITableFieldDealHandler handler = keyHandlerMap.get(key);
-                if(handler == null){
+                if (handler == null) {
                     throw new RuntimeException("parse field [" + fieldRow + "] error.");
                 }
 
@@ -77,19 +77,19 @@ public abstract class AbsTableParser {
         return false;
     }
 
-    public void parseFieldsInfo(String fieldsInfo, TableInfo tableInfo){
+    public void parseFieldsInfo(String fieldsInfo, TableInfo tableInfo) {
 
-        List<String> fieldRows = DtStringUtil.splitIgnoreQuota(fieldsInfo, ',');
-        for(String fieldRow : fieldRows){
+        List<String> fieldRows = YjpStringUtil.splitIgnoreQuota(fieldsInfo, ',');
+        for (String fieldRow : fieldRows) {
             fieldRow = fieldRow.trim();
             boolean isMatcherKey = dealKeyPattern(fieldRow, tableInfo);
 
-            if(isMatcherKey){
+            if (isMatcherKey) {
                 continue;
             }
 
             String[] filedInfoArr = fieldRow.split("\\s+");
-            if(filedInfoArr.length < 2){
+            if (filedInfoArr.length < 2) {
                 throw new RuntimeException(String.format("table [%s] field [%s] format error.", tableInfo.getName(), fieldRow));
             }
 
@@ -97,7 +97,7 @@ public abstract class AbsTableParser {
             String[] filedNameArr = new String[filedInfoArr.length - 1];
             System.arraycopy(filedInfoArr, 0, filedNameArr, 0, filedInfoArr.length - 1);
             String fieldName = String.join(" ", filedNameArr);
-            String fieldType = filedInfoArr[filedInfoArr.length - 1 ].trim();
+            String fieldType = filedInfoArr[filedInfoArr.length - 1].trim();
             Class fieldClass = ClassUtil.stringConvertClass(fieldType);
 
             tableInfo.addField(fieldName);
@@ -108,7 +108,7 @@ public abstract class AbsTableParser {
         tableInfo.finish();
     }
 
-    public static void dealPrimaryKey(Matcher matcher, TableInfo tableInfo){
+    public static void dealPrimaryKey(Matcher matcher, TableInfo tableInfo) {
         String primaryFields = matcher.group(1).trim();
         String[] splitArry = primaryFields.split(",");
         List<String> primaryKes = Lists.newArrayList(splitArry);

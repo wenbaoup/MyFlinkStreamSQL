@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,42 +16,46 @@
  * limitations under the License.
  */
 
-package com.yjp.flink.sql.launcher;
+package com.yjp.flink.sql.options;
+
+import com.yjp.flink.sql.ClusterMode;
 
 /**
  * This class define commandline options for the Launcher program
+ * <p>
+ * Company: www.dtstack.com
  *
- * Company: www.yjp.com
  * @author huyifan.zju@163.com
  */
 public class LauncherOptions {
 
-    private  String mode;
+    private String mode = ClusterMode.local.name();
 
-    private  String name;
+    private String name;
 
-    private  String sql;
+    private String sql;
 
-    private  String flinkconf;
+    private String flinkconf;
 
-    private  String yarnconf;
+    private String yarnconf;
 
-    private  String localSqlPluginPath;
+    private String localSqlPluginPath;
 
-    private  String remoteSqlPluginPath ;
+    private String remoteSqlPluginPath;
 
-    private  String addjar;
+    private String addjar;
 
-    private  String confProp;
+    private String confProp;
 
-    private  String savePointPath;
+    private String savePointPath;
 
-    private  String allowNonRestoredState = "false";
+    private String allowNonRestoredState = "false";
 
     //just use for per_job mode
     private String flinkJarPath;
 
     private String queue;
+
 
     public String getMode() {
         return mode;
@@ -156,4 +160,5 @@ public class LauncherOptions {
     public void setQueue(String queue) {
         this.queue = queue;
     }
+
 }

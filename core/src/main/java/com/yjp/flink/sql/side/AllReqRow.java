@@ -17,10 +17,9 @@
  */
 
 
-
 package com.yjp.flink.sql.side;
 
-import com.yjp.flink.sql.threadFactory.DTThreadFactory;
+import com.yjp.flink.sql.threadFactory.YjpThreadFactory;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.types.Row;
@@ -34,6 +33,7 @@ import java.util.concurrent.TimeUnit;
  * Reason:
  * Date: 2018/9/18
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -43,7 +43,7 @@ public abstract class AllReqRow extends RichFlatMapFunction<Row, Row> implements
 
     private ScheduledExecutorService es;
 
-    public AllReqRow(SideInfo sideInfo){
+    public AllReqRow(SideInfo sideInfo) {
         this.sideInfo = sideInfo;
 
     }
@@ -60,7 +60,7 @@ public abstract class AllReqRow extends RichFlatMapFunction<Row, Row> implements
 
         //start reload cache thread
         SideTableInfo sideTableInfo = sideInfo.getSideTableInfo();
-        es = Executors.newSingleThreadScheduledExecutor(new DTThreadFactory("cache-all-reload"));
+        es = Executors.newSingleThreadScheduledExecutor(new YjpThreadFactory("cache-all-reload"));
         es.scheduleAtFixedRate(() -> reloadCache(), sideTableInfo.getCacheTimeout(), sideTableInfo.getCacheTimeout(), TimeUnit.MILLISECONDS);
     }
 

@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.side;
 
@@ -24,6 +23,7 @@ package com.yjp.flink.sql.side;
  * Reason:
  * Date: 2018/7/24
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 

@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.side;
 
-import com.yjp.flink.sql.classloader.DtClassLoader;
+import com.yjp.flink.sql.classloader.YjpClassLoader;
 import com.yjp.flink.sql.enums.ECacheType;
 import com.yjp.flink.sql.table.AbsSideTableParser;
 import com.yjp.flink.sql.table.AbsTableParser;
@@ -30,6 +29,7 @@ import com.yjp.flink.sql.util.PluginUtil;
  * get specify side parser
  * Date: 2018/7/25
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -43,12 +43,12 @@ public class StreamSideFactory {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         String pluginJarPath = PluginUtil.getSideJarFileDirPath(pluginType, sideOperator, "side", sqlRootDir);
 
-        DtClassLoader dtClassLoader = (DtClassLoader) classLoader;
+        YjpClassLoader dtClassLoader = (YjpClassLoader) classLoader;
         PluginUtil.addPluginJar(pluginJarPath, dtClassLoader);
         String className = PluginUtil.getSqlParserClassName(pluginType, CURR_TYPE);
 
         Class<?> sideParser = dtClassLoader.loadClass(className);
-        if(!AbsSideTableParser.class.isAssignableFrom(sideParser)){
+        if (!AbsSideTableParser.class.isAssignableFrom(sideParser)) {
             throw new RuntimeException("class " + sideParser.getName() + " not subClass of AbsSideTableParser");
         }
 

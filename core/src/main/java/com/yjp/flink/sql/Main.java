@@ -19,6 +19,7 @@
 
 package com.yjp.flink.sql;
 
+import com.yjp.flink.sql.classloader.YjpClassLoader;
 import com.yjp.flink.sql.enums.ECacheType;
 import com.yjp.flink.sql.environment.MyLocalStreamEnvironment;
 import com.yjp.flink.sql.parser.*;
@@ -29,17 +30,10 @@ import com.yjp.flink.sql.source.StreamSourceFactory;
 import com.yjp.flink.sql.table.SourceTableInfo;
 import com.yjp.flink.sql.table.TableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
-import com.yjp.flink.sql.util.DtStringUtil;
 import com.yjp.flink.sql.util.FlinkUtil;
+import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
 import com.yjp.flink.sql.watermarker.WaterMarkerAssigner;
-import com.yjp.flink.sql.classloader.YjpClassLoader;
-import com.yjp.flink.sql.parser.CreateTmpTableParser;
-import com.yjp.flink.sql.parser.SqlParser;
-import com.yjp.flink.sql.parser.SqlTree;
-import com.yjp.flink.sql.side.SideSqlExec;
-import com.yjp.flink.sql.side.SideTableInfo;
-import com.yjp.flink.sql.util.PluginUtil;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlNode;
@@ -277,7 +271,7 @@ public class Main {
                 String adaptSql = sourceTableInfo.getAdaptSelectSql();
                 Table adaptTable = adaptSql == null ? table : tableEnv.sqlQuery(adaptSql);
 
-                RowTypeInfo typeInfo = new RowTypeInfo(adaptTable.getSchema().getTypes(), adaptTable.getSchema().getColumnNames());
+                RowTypeInfo typeInfo = new RowTypeInfo(adaptTable.getSchema().getFieldTypes(), adaptTable.getSchema().getFieldNames());
                 DataStream adaptStream = tableEnv.toRetractStream(adaptTable, typeInfo)
                         .map((Tuple2<Boolean, Row> f0) -> {
                             return f0.f1;

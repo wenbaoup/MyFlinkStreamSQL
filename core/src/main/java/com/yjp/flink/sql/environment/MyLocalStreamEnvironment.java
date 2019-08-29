@@ -24,7 +24,9 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.runtime.jobgraph.JobGraph;
-import org.apache.flink.runtime.minicluster.LocalFlinkMiniCluster;
+import org.apache.flink.runtime.minicluster.MiniCluster;
+import org.apache.flink.runtime.minicluster.MiniClusterConfiguration;
+import org.apache.flink.runtime.minicluster.RpcServiceSharing;
 import org.apache.flink.streaming.api.environment.LocalStreamEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.graph.StreamGraph;
@@ -110,14 +112,15 @@ public class MyLocalStreamEnvironment extends StreamExecutionEnvironment {
         if (LOG.isInfoEnabled()) {
             LOG.info("Running job on local embedded Flink mini cluster");
         }
-
-        LocalFlinkMiniCluster exec = new LocalFlinkMiniCluster(configuration, true);
+        MiniClusterConfiguration miniClusterConfiguration =
+                new MiniClusterConfiguration(configuration, 1, RpcServiceSharing.SHARED, "localhost");
+        MiniCluster exec = new MiniCluster(miniClusterConfiguration);
         try {
             exec.start();
-            return exec.submitJobAndWait(jobGraph, getConfig().isSysoutLoggingEnabled());
+            return exec.executeJobBlocking(jobGraph);
         } finally {
             transformations.clear();
-            exec.stop();
+            exec.closeAsync();
         }
     }
 

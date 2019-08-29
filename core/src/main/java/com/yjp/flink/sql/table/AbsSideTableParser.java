@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.table;
 
@@ -32,6 +31,7 @@ import java.util.regex.Pattern;
  * Reason:
  * Date: 2018/8/2
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -46,42 +46,42 @@ public abstract class AbsSideTableParser extends AbsTableParser {
         keyHandlerMap.put(SIDE_SIGN_KEY, AbsSideTableParser::dealSideSign);
     }
 
-    private static void dealSideSign(Matcher matcher, TableInfo tableInfo){
+    private static void dealSideSign(Matcher matcher, TableInfo tableInfo) {
         //FIXME SIDE_TABLE_SIGN current just used as a sign for side table; and do nothing
     }
 
     //Analytical create table attributes ==> Get information cache
-    protected void parseCacheProp(SideTableInfo sideTableInfo, Map<String, Object> props){
-        if(props.containsKey(SideTableInfo.CACHE_KEY.toLowerCase())){
+    protected void parseCacheProp(SideTableInfo sideTableInfo, Map<String, Object> props) {
+        if (props.containsKey(SideTableInfo.CACHE_KEY.toLowerCase())) {
             String cacheType = MathUtil.getString(props.get(SideTableInfo.CACHE_KEY.toLowerCase()));
-            if(cacheType == null){
+            if (cacheType == null) {
                 return;
             }
 
-            if(!ECacheType.isValid(cacheType)){
+            if (!ECacheType.isValid(cacheType)) {
                 throw new RuntimeException("can't not support cache type :" + cacheType);
             }
 
             sideTableInfo.setCacheType(cacheType);
-            if(props.containsKey(SideTableInfo.CACHE_SIZE_KEY.toLowerCase())){
+            if (props.containsKey(SideTableInfo.CACHE_SIZE_KEY.toLowerCase())) {
                 Integer cacheSize = MathUtil.getIntegerVal(props.get(SideTableInfo.CACHE_SIZE_KEY.toLowerCase()));
-                if(cacheSize < 0){
+                if (cacheSize < 0) {
                     throw new RuntimeException("cache size need > 0.");
                 }
                 sideTableInfo.setCacheSize(cacheSize);
             }
 
-            if(props.containsKey(SideTableInfo.CACHE_TTLMS_KEY.toLowerCase())){
+            if (props.containsKey(SideTableInfo.CACHE_TTLMS_KEY.toLowerCase())) {
                 Long cacheTTLMS = MathUtil.getLongVal(props.get(SideTableInfo.CACHE_TTLMS_KEY.toLowerCase()));
-                if(cacheTTLMS < 1000){
+                if (cacheTTLMS < 1000) {
                     throw new RuntimeException("cache time out need > 1000 ms.");
                 }
                 sideTableInfo.setCacheTimeout(cacheTTLMS);
             }
 
-            if(props.containsKey(SideTableInfo.PARTITIONED_JOIN_KEY.toLowerCase())){
+            if (props.containsKey(SideTableInfo.PARTITIONED_JOIN_KEY.toLowerCase())) {
                 Boolean partitionedJoinKey = MathUtil.getBoolean(props.get(SideTableInfo.PARTITIONED_JOIN_KEY.toLowerCase()));
-                if(partitionedJoinKey){
+                if (partitionedJoinKey) {
                     sideTableInfo.setPartitionedJoin(true);
                 }
             }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.yjp.flink.sql.launcher;
+package com.yjp.flink.sql.options;
 
 import avro.shaded.com.google.common.collect.Lists;
 import com.yjp.flink.sql.ClusterMode;
@@ -37,8 +37,9 @@ import java.util.Map;
 
 /**
  * The Parser of Launcher commandline options
+ * <p>
+ * Company: www.dtstack.com
  *
- * Company: www.yjp.com
  * @author sishu.yss
  */
 public class LauncherOptionParser {
@@ -67,15 +68,13 @@ public class LauncherOptionParser {
 
     public static final String OPTION_FLINK_JAR_PATH = "flinkJarPath";
 
-    public static final String OPTION_QUEUE = "queue";
-
     private Options options = new Options();
 
     private BasicParser parser = new BasicParser();
 
     private LauncherOptions properties = new LauncherOptions();
 
-    public LauncherOptionParser(String[] args) {
+    public LauncherOptionParser(String[] args) throws Exception {
         options.addOption(OPTION_MODE, true, "Running mode");
         options.addOption(OPTION_SQL, true, "Job sql file");
         options.addOption(OPTION_NAME, true, "Job name");
@@ -89,91 +88,83 @@ public class LauncherOptionParser {
         options.addOption(OPTION_SAVE_POINT_PATH, true, "Savepoint restore path");
         options.addOption(OPTION_ALLOW_NON_RESTORED_STATE, true, "Flag indicating whether non restored state is allowed if the savepoint");
         options.addOption(OPTION_FLINK_JAR_PATH, true, "flink jar path for submit of perjob mode");
-        options.addOption(OPTION_QUEUE, true, "flink runing yarn queue");
+        CommandLine cl = parser.parse(options, args);
+        String mode = cl.getOptionValue(OPTION_MODE, ClusterMode.local.name());
+        //check mode
+        properties.setMode(mode);
 
-        try {
-            CommandLine cl = parser.parse(options, args);
-            String mode = cl.getOptionValue(OPTION_MODE, ClusterMode.local.name());
-            //check mode
-            properties.setMode(mode);
+        String job = Preconditions.checkNotNull(cl.getOptionValue(OPTION_SQL),
+                "Must specify job file using option '" + OPTION_SQL + "'");
+        File file = new File(job);
+        FileInputStream in = new FileInputStream(file);
+        byte[] filecontent = new byte[(int) file.length()];
+        in.read(filecontent);
+        String content = new String(filecontent, "UTF-8");
 
-            String job = Preconditions.checkNotNull(cl.getOptionValue(OPTION_SQL),
-                    "Must specify job file using option '" + OPTION_SQL + "'");
-            File file = new File(job);
-            FileInputStream in = new FileInputStream(file);
-            byte[] filecontent = new byte[(int) file.length()];
-            in.read(filecontent);
-            String content = new String(filecontent, "UTF-8");
-            String sql = URLEncoder.encode(content, Charsets.UTF_8.name());
-            properties.setSql(sql);
-            String localPlugin = Preconditions.checkNotNull(cl.getOptionValue(OPTION_LOCAL_SQL_PLUGIN_PATH));
-            properties.setLocalSqlPluginPath(localPlugin);
-            String remotePlugin = cl.getOptionValue(OPTION_REMOTE_SQL_PLUGIN_PATH);
-//            if(!ClusterMode.local.name().equals(mode)){
-//                Preconditions.checkNotNull(remotePlugin);
-                properties.setRemoteSqlPluginPath(remotePlugin);
-//            }
-            String name = Preconditions.checkNotNull(cl.getOptionValue(OPTION_NAME));
-            properties.setName(name);
-            String addJar = cl.getOptionValue(OPTION_ADDJAR);
-            if(StringUtils.isNotBlank(addJar)){
-                properties.setAddjar(addJar);
-            }
-            String confProp = cl.getOptionValue(OPTION_CONF_PROP);
-            if(StringUtils.isNotBlank(confProp)){
-                properties.setConfProp(confProp);
-            }
-            String flinkConfDir = cl.getOptionValue(OPTION_FLINK_CONF_DIR);
-            if(StringUtils.isNotBlank(flinkConfDir)) {
-                properties.setFlinkconf(flinkConfDir);
-            }
+        String sql = URLEncoder.encode(content, Charsets.UTF_8.name());
+        properties.setSql(sql);
 
-            String yarnConfDir = cl.getOptionValue(OPTION_YARN_CONF_DIR);
-            if(StringUtils.isNotBlank(yarnConfDir)) {
-                properties.setYarnconf(yarnConfDir);
-            }
+        String localPlugin = Preconditions.checkNotNull(cl.getOptionValue(OPTION_LOCAL_SQL_PLUGIN_PATH));
+        properties.setLocalSqlPluginPath(localPlugin);
 
-            String savePointPath = cl.getOptionValue(OPTION_SAVE_POINT_PATH);
-            if(StringUtils.isNotBlank(savePointPath)) {
-                properties.setSavePointPath(savePointPath);
-            }
+        String remotePlugin = cl.getOptionValue(OPTION_REMOTE_SQL_PLUGIN_PATH);
+        properties.setRemoteSqlPluginPath(remotePlugin);
 
-            String allow_non = cl.getOptionValue(OPTION_ALLOW_NON_RESTORED_STATE);
-            if(StringUtils.isNotBlank(allow_non)) {
-                properties.setAllowNonRestoredState(allow_non);
-            }
+        String name = Preconditions.checkNotNull(cl.getOptionValue(OPTION_NAME));
+        properties.setName(name);
 
-            String flinkJarPath = cl.getOptionValue(OPTION_FLINK_JAR_PATH);
-            if(StringUtils.isNotBlank(flinkJarPath)){
-                properties.setFlinkJarPath(flinkJarPath);
-            }
+        String addJar = cl.getOptionValue(OPTION_ADDJAR);
+        if (StringUtils.isNotBlank(addJar)) {
+            properties.setAddjar(addJar);
+        }
 
-            String queue = cl.getOptionValue(OPTION_QUEUE);
-            if(StringUtils.isNotBlank(queue)){
-                properties.setQueue(queue);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        String confProp = cl.getOptionValue(OPTION_CONF_PROP);
+        if (StringUtils.isNotBlank(confProp)) {
+            properties.setConfProp(confProp);
+        }
+        String flinkConfDir = cl.getOptionValue(OPTION_FLINK_CONF_DIR);
+        if (StringUtils.isNotBlank(flinkConfDir)) {
+            properties.setFlinkconf(flinkConfDir);
+        }
+
+        String yarnConfDir = cl.getOptionValue(OPTION_YARN_CONF_DIR);
+        if (StringUtils.isNotBlank(yarnConfDir)) {
+            properties.setYarnconf(yarnConfDir);
+        }
+
+        String savePointPath = cl.getOptionValue(OPTION_SAVE_POINT_PATH);
+        if (StringUtils.isNotBlank(savePointPath)) {
+            properties.setSavePointPath(savePointPath);
+        }
+
+        String allow_non = cl.getOptionValue(OPTION_ALLOW_NON_RESTORED_STATE);
+        if (StringUtils.isNotBlank(allow_non)) {
+            properties.setAllowNonRestoredState(allow_non);
+        }
+
+        String flinkJarPath = cl.getOptionValue(OPTION_FLINK_JAR_PATH);
+        if (StringUtils.isNotBlank(flinkJarPath)) {
+            properties.setFlinkJarPath(flinkJarPath);
         }
     }
 
-    public LauncherOptions getLauncherOptions(){
+    public LauncherOptions getLauncherOptions() {
         return properties;
     }
 
     public List<String> getProgramExeArgList() throws Exception {
-        Map<String,Object> mapConf = PluginUtil.ObjectToMap(properties);
+        Map<String, Object> mapConf = PluginUtil.ObjectToMap(properties);
         List<String> args = Lists.newArrayList();
-        for(Map.Entry<String, Object> one : mapConf.entrySet()){
+
+        for (Map.Entry<String, Object> one : mapConf.entrySet()) {
             String key = one.getKey();
-            if(OPTION_FLINK_CONF_DIR.equalsIgnoreCase(key)
+            if (OPTION_FLINK_CONF_DIR.equalsIgnoreCase(key)
                     || OPTION_YARN_CONF_DIR.equalsIgnoreCase(key)
-                    || OPTION_FLINK_JAR_PATH.equalsIgnoreCase(key)
-                    || OPTION_QUEUE.equalsIgnoreCase(key)){
+                    || OPTION_FLINK_JAR_PATH.equalsIgnoreCase(key)) {
                 continue;
             }
 
-            if(one.getValue() == null){
+            if (one.getValue() == null) {
                 continue;
             }
 

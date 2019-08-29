@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.parser;
 
 import com.yjp.flink.sql.enums.ETableType;
 import com.yjp.flink.sql.table.TableInfo;
 import com.yjp.flink.sql.table.TableInfoParser;
-import com.yjp.flink.sql.util.DtStringUtil;
+import com.yjp.flink.sql.util.YjpStringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.shaded.curator.org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.flink.shaded.guava18.com.google.common.base.Strings;
@@ -35,6 +34,7 @@ import java.util.Set;
  * Reason:
  * Date: 2018/6/22
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -47,7 +47,7 @@ public class SqlParser {
     private static List<IParser> sqlParserList = Lists.newArrayList(CreateFuncParser.newInstance(),
             CreateTableParser.newInstance(), InsertSqlParser.newInstance(), CreateTmpTableParser.newInstance());
 
-    public static void setLocalSqlPluginRoot(String localSqlPluginRoot){
+    public static void setLocalSqlPluginRoot(String localSqlPluginRoot) {
         LOCAL_SQL_PLUGIN_ROOT = localSqlPluginRoot;
     }
 
@@ -56,15 +56,16 @@ public class SqlParser {
      * CREATE TABLE sls_stream() with ();
      * CREATE (TABLE|SCALA) FUNCTION fcnName WITH com.yjp.com;
      * insert into tb1 select * from tb2;
+     *
      * @param sql
      */
     public static SqlTree parseSql(String sql) throws Exception {
 
-        if(StringUtils.isBlank(sql)){
+        if (StringUtils.isBlank(sql)) {
             throw new RuntimeException("sql is not null");
         }
 
-        if(LOCAL_SQL_PLUGIN_ROOT == null){
+        if (LOCAL_SQL_PLUGIN_ROOT == null) {
             throw new RuntimeException("need to set local sql plugin root");
         }
 
@@ -73,16 +74,16 @@ public class SqlParser {
                 .replaceAll("\n", " ")
                 .replace("\t", " ").trim();
 
-        List<String> sqlArr = DtStringUtil.splitIgnoreQuota(sql, SQL_DELIMITER);
+        List<String> sqlArr = YjpStringUtil.splitIgnoreQuota(sql, SQL_DELIMITER);
         SqlTree sqlTree = new SqlTree();
         TableInfoParser tableInfoParser = new TableInfoParser();
-        for(String childSql : sqlArr){
-            if(Strings.isNullOrEmpty(childSql)){
+        for (String childSql : sqlArr) {
+            if (Strings.isNullOrEmpty(childSql)) {
                 continue;
             }
             boolean result = false;
-            for(IParser sqlParser : sqlParserList){
-                if(!sqlParser.verify(childSql)){
+            for (IParser sqlParser : sqlParserList) {
+                if (!sqlParser.verify(childSql)) {
                     continue;
                 }
 
@@ -90,25 +91,25 @@ public class SqlParser {
                 result = true;
             }
 
-            if(!result){
+            if (!result) {
                 throw new RuntimeException(String.format("%s:Syntax does not support,the format of SQL like insert into tb1 select * from tb2.", childSql));
             }
         }
 
         //解析exec-sql
-        if(sqlTree.getExecSqlList().size() == 0){
+        if (sqlTree.getExecSqlList().size() == 0) {
             throw new RuntimeException("sql no executable statement");
         }
 
-        for(InsertSqlParser.SqlParseResult result : sqlTree.getExecSqlList()){
+        for (InsertSqlParser.SqlParseResult result : sqlTree.getExecSqlList()) {
             List<String> sourceTableList = result.getSourceTableList();
             List<String> targetTableList = result.getTargetTableList();
             Set<String> tmpTableList = sqlTree.getTmpTableMap().keySet();
 
-            for(String tableName : sourceTableList){
-                if (!tmpTableList.contains(tableName)){
+            for (String tableName : sourceTableList) {
+                if (!tmpTableList.contains(tableName)) {
                     CreateTableParser.SqlParserResult createTableResult = sqlTree.getPreDealTableMap().get(tableName);
-                    if(createTableResult == null){
+                    if (createTableResult == null) {
                         throw new RuntimeException("can't find table " + tableName);
                     }
 
@@ -118,10 +119,10 @@ public class SqlParser {
                 }
             }
 
-            for(String tableName : targetTableList){
-                if (!tmpTableList.contains(tableName)){
+            for (String tableName : targetTableList) {
+                if (!tmpTableList.contains(tableName)) {
                     CreateTableParser.SqlParserResult createTableResult = sqlTree.getPreDealTableMap().get(tableName);
-                    if(createTableResult == null){
+                    if (createTableResult == null) {
                         throw new RuntimeException("can't find table " + tableName);
                     }
 
@@ -132,14 +133,14 @@ public class SqlParser {
             }
         }
 
-        for (CreateTmpTableParser.SqlParserResult result : sqlTree.getTmpSqlList()){
+        for (CreateTmpTableParser.SqlParserResult result : sqlTree.getTmpSqlList()) {
             List<String> sourceTableList = result.getSourceTableList();
-            for(String tableName : sourceTableList){
-                if (!sqlTree.getTableInfoMap().keySet().contains(tableName)){
+            for (String tableName : sourceTableList) {
+                if (!sqlTree.getTableInfoMap().keySet().contains(tableName)) {
                     CreateTableParser.SqlParserResult createTableResult = sqlTree.getPreDealTableMap().get(tableName);
-                    if(createTableResult == null){
+                    if (createTableResult == null) {
                         CreateTmpTableParser.SqlParserResult tmpTableResult = sqlTree.getTmpTableMap().get(tableName);
-                        if (tmpTableResult == null){
+                        if (tmpTableResult == null) {
                             throw new RuntimeException("can't find table " + tableName);
                         }
                     } else {

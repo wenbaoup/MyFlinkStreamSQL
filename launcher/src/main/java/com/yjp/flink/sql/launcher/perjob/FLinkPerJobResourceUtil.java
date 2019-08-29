@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,25 +46,25 @@ public class FLinkPerJobResourceUtil {
         int slotsPerTaskManager = 1;
 
         if (confProperties != null) {
-            if (confProperties.containsKey(JOBMANAGER_MEMORY_MB)){
+            if (confProperties.containsKey(JOBMANAGER_MEMORY_MB)) {
                 jobmanagerMemoryMb = MathUtil.getIntegerVal(confProperties.get(JOBMANAGER_MEMORY_MB));
                 if (jobmanagerMemoryMb < MIN_JM_MEMORY) {
                     jobmanagerMemoryMb = MIN_JM_MEMORY;
                 }
             }
 
-            if (confProperties.containsKey(TASKMANAGER_MEMORY_MB)){
+            if (confProperties.containsKey(TASKMANAGER_MEMORY_MB)) {
                 taskmanagerMemoryMb = MathUtil.getIntegerVal(confProperties.get(TASKMANAGER_MEMORY_MB));
                 if (taskmanagerMemoryMb < MIN_TM_MEMORY) {
                     taskmanagerMemoryMb = MIN_TM_MEMORY;
                 }
             }
 
-            if (confProperties.containsKey(NUMBER_TASK_MANAGERS)){
+            if (confProperties.containsKey(NUMBER_TASK_MANAGERS)) {
                 numberTaskManagers = MathUtil.getIntegerVal(confProperties.get(NUMBER_TASK_MANAGERS));
             }
 
-            if (confProperties.containsKey(SLOTS_PER_TASKMANAGER)){
+            if (confProperties.containsKey(SLOTS_PER_TASKMANAGER)) {
                 slotsPerTaskManager = MathUtil.getIntegerVal(confProperties.get(SLOTS_PER_TASKMANAGER));
             }
         }
