@@ -1,0 +1,16 @@
+target
+.idea/
+/.idea/*
+target/
+.class
+.project
+.classpath
+*.eclipse.*
+*.iml
+plugins/
+lib/
+.vertx/
+.DS_Store
+bin/nohup.out
+.DS_Store
+bin/sideSql.txt
