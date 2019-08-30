@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.table;
 
@@ -24,10 +23,23 @@ package com.yjp.flink.sql.table;
  * Reason:
  * Date: 2018/6/25
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
 public abstract class TargetTableInfo extends TableInfo {
 
     public static final String TARGET_SUFFIX = "Sink";
+
+    public static final String SINK_DATA_TYPE = "sinkdatatype";
+
+    private String sinkDataType = "json";
+
+    public String getSinkDataType() {
+        return sinkDataType;
+    }
+
+    public void setSinkDataType(String sinkDataType) {
+        this.sinkDataType = sinkDataType;
+    }
 }

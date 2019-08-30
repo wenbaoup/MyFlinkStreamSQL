@@ -14,6 +14,8 @@
     <modules>
         <module>core</module>
         <module>launcher</module>
+        <module>kafka11</module>
+        <module>kudu</module>
     </modules>
 
     <properties>

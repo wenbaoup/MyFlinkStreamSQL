@@ -22,6 +22,7 @@ import org.apache.flink.api.common.InvalidProgramException;
 import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.minicluster.MiniCluster;
@@ -112,8 +113,9 @@ public class MyLocalStreamEnvironment extends StreamExecutionEnvironment {
         if (LOG.isInfoEnabled()) {
             LOG.info("Running job on local embedded Flink mini cluster");
         }
+        configuration.setString(RestOptions.ADDRESS, "9091");
         MiniClusterConfiguration miniClusterConfiguration =
-                new MiniClusterConfiguration(configuration, 1, RpcServiceSharing.SHARED, "localhost");
+                new MiniClusterConfiguration(configuration, 1, RpcServiceSharing.DEDICATED, null);
         MiniCluster exec = new MiniCluster(miniClusterConfiguration);
         try {
             exec.start();
