@@ -16,19 +16,17 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.util;
 
 
 /**
+ * @author sishu.yss
  * @Date: 2018年09月14日 下午14:23:37
  * @Company: www.dtstack.com
- * @author sishu.yss
- *
  */
 public class ConfigConstrant {
-	
+
     public static final String FLINK_CHECKPOINT_INTERVAL_KEY = "sql.checkpoint.interval";
 
     public static final String FLINK_CHECKPOINT_MODE_KEY = "sql.checkpoint.mode";
@@ -44,11 +42,14 @@ public class ConfigConstrant {
     public static final String SQL_ENV_PARALLELISM = "sql.env.parallelism";
 
     public static final String SQL_MAX_ENV_PARALLELISM = "sql.max.env.parallelism";
-    
+
     public static final String MR_JOB_PARALLELISM = "mr.job.parallelism";
-    
+
     public static final String SQL_BUFFER_TIMEOUT_MILLIS = "sql.buffer.timeout.millis";
 
     public static final String FLINK_TIME_CHARACTERISTIC_KEY = "time.characteristic";
+
+
+    public static final String FLINK_CHECKPOINT_STATE_BACKEND_KEY = "sql.checkpoint.state.backend.mode";
 
 }

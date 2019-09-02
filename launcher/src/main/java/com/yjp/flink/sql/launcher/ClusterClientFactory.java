@@ -105,7 +105,11 @@ public class ClusterClientFactory {
                 int maxMemory = -1;
                 int maxCores = -1;
                 for (ApplicationReport report : reportList) {
-                    if (!report.getName().startsWith("Flink session")) {
+//                    if (!report.getName().startsWith("Flink-session")) {
+//                        continue;
+//                    }
+
+                    if (!report.getName().startsWith("flink-stream")) {
                         continue;
                     }
 
@@ -123,6 +127,7 @@ public class ClusterClientFactory {
 
                 }
 
+                assert applicationId != null;
                 if (StringUtils.isEmpty(applicationId.toString())) {
                     throw new RuntimeException("No flink session found on yarn cluster.");
                 }

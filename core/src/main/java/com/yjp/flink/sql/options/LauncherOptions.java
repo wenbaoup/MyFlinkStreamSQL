@@ -51,7 +51,9 @@ public class LauncherOptions {
 
     private String allowNonRestoredState = "false";
 
-    //just use for per_job mode
+    /**
+     * just use for per_job mode
+     */
     private String flinkJarPath;
 
     private String queue;

@@ -137,9 +137,9 @@ public class LauncherOptionParser {
             properties.setSavePointPath(savePointPath);
         }
 
-        String allow_non = cl.getOptionValue(OPTION_ALLOW_NON_RESTORED_STATE);
-        if (StringUtils.isNotBlank(allow_non)) {
-            properties.setAllowNonRestoredState(allow_non);
+        String allowNonRestoredState = cl.getOptionValue(OPTION_ALLOW_NON_RESTORED_STATE);
+        if (StringUtils.isNotBlank(allowNonRestoredState)) {
+            properties.setAllowNonRestoredState(allowNonRestoredState);
         }
 
         String flinkJarPath = cl.getOptionValue(OPTION_FLINK_JAR_PATH);

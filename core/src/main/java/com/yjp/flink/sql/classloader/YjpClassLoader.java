@@ -184,9 +184,11 @@ public class YjpClassLoader extends URLClassLoader {
     public Enumeration<URL> getResources(String name) throws IOException {
         @SuppressWarnings("unchecked")
         Enumeration<URL>[] tmp = (Enumeration<URL>[]) new Enumeration<?>[1];
-        tmp[0] = findResources(name);//优先使用当前类的资源
+        //优先使用当前类的资源
+        tmp[0] = findResources(name);
 
-        if (!tmp[0].hasMoreElements()) {//只有子classLoader找不到任何资源才会调用原生的方法
+        //只有子classLoader找不到任何资源才会调用原生的方法
+        if (!tmp[0].hasMoreElements()) {
             return super.getResources(name);
         }
 

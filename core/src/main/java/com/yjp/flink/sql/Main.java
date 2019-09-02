@@ -333,9 +333,7 @@ public class Main {
         confProperties.forEach((key, val) -> {
             try {
                 method.invoke(globalJobParameters, key, val);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
             }
         });
