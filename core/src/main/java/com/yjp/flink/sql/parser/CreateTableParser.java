@@ -54,6 +54,7 @@ public class CreateTableParser implements IParser {
     public void parseSql(String sql, SqlTree sqlTree) {
         Matcher matcher = PATTERN.matcher(sql);
         if (matcher.find()) {
+            //通过正则表达式的匹配条件获取对应的信息
             String tableName = matcher.group(1);
             String fieldsInfoStr = matcher.group(2);
             String propsStr = matcher.group(3);
@@ -63,15 +64,17 @@ public class CreateTableParser implements IParser {
             result.setTableName(tableName);
             result.setFieldsInfoStr(fieldsInfoStr);
             result.setPropMap(props);
-
+            //将tableName和所有连接信息放入preDealTableMap
             sqlTree.addPreDealTableInfo(tableName, result);
         }
     }
 
-    private Map parseProp(String propsStr) {
+    private Map<String, Object> parseProp(String propsStr) {
+        //通过，切分数据
         String[] strs = propsStr.trim().split("'\\s*,");
         Map<String, Object> propMap = Maps.newHashMap();
         for (int i = 0; i < strs.length; i++) {
+            //通过=切分 将type ='kafka11' 切分为key value
             List<String> ss = YjpStringUtil.splitIgnoreQuota(strs[i], '=');
             String key = ss.get(0).trim();
             String value = ss.get(1).trim().replaceAll("'", "").trim();

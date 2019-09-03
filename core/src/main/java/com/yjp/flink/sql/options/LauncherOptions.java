@@ -58,6 +58,8 @@ public class LauncherOptions {
 
     private String queue;
 
+    private String tableConfProp;
+
 
     public String getMode() {
         return mode;
@@ -163,4 +165,11 @@ public class LauncherOptions {
         this.queue = queue;
     }
 
+    public String getTableConfProp() {
+        return tableConfProp;
+    }
+
+    public void setTableConfProp(String tableConfProp) {
+        this.tableConfProp = tableConfProp;
+    }
 }

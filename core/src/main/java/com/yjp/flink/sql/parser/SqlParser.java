@@ -73,7 +73,7 @@ public class SqlParser {
                 .replaceAll("\r\n", " ")
                 .replaceAll("\n", " ")
                 .replace("\t", " ").trim();
-
+        //通过;切割sql文件
         List<String> sqlArr = YjpStringUtil.splitIgnoreQuota(sql, SQL_DELIMITER);
         SqlTree sqlTree = new SqlTree();
         TableInfoParser tableInfoParser = new TableInfoParser();
@@ -83,6 +83,7 @@ public class SqlParser {
             }
             boolean result = false;
             for (IParser sqlParser : sqlParserList) {
+                //通过不同的正则表达式判断不同类型 创建表 创建函数  创建临时表 insert
                 if (!sqlParser.verify(childSql)) {
                     continue;
                 }

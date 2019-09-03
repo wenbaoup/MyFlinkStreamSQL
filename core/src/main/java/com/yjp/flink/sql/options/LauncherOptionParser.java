@@ -21,8 +21,9 @@ package com.yjp.flink.sql.options;
 import avro.shaded.com.google.common.collect.Lists;
 import com.yjp.flink.sql.ClusterMode;
 import com.yjp.flink.sql.util.PluginUtil;
-import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.hadoop.shaded.com.google.common.base.Charsets;
@@ -68,9 +69,11 @@ public class LauncherOptionParser {
 
     public static final String OPTION_FLINK_JAR_PATH = "flinkJarPath";
 
+    public static final String OPTION_TABLE_CONF_PROP = "tableConfProp";
+
     private Options options = new Options();
 
-    private BasicParser parser = new BasicParser();
+    private CommandLineParser parser = new DefaultParser();
 
     private LauncherOptions properties = new LauncherOptions();
 
@@ -88,6 +91,9 @@ public class LauncherOptionParser {
         options.addOption(OPTION_SAVE_POINT_PATH, true, "Savepoint restore path");
         options.addOption(OPTION_ALLOW_NON_RESTORED_STATE, true, "Flag indicating whether non restored state is allowed if the savepoint");
         options.addOption(OPTION_FLINK_JAR_PATH, true, "flink jar path for submit of perjob mode");
+
+        options.addOption(OPTION_TABLE_CONF_PROP, true, "flink table ref prop,eg specify Idle State Retention Time");
+        //参数解析
         CommandLine cl = parser.parse(options, args);
         String mode = cl.getOptionValue(OPTION_MODE, ClusterMode.local.name());
         //check mode
@@ -95,6 +101,7 @@ public class LauncherOptionParser {
 
         String job = Preconditions.checkNotNull(cl.getOptionValue(OPTION_SQL),
                 "Must specify job file using option '" + OPTION_SQL + "'");
+        //读取sql文件
         File file = new File(job);
         FileInputStream in = new FileInputStream(file);
         byte[] filecontent = new byte[(int) file.length()];
@@ -145,6 +152,11 @@ public class LauncherOptionParser {
         String flinkJarPath = cl.getOptionValue(OPTION_FLINK_JAR_PATH);
         if (StringUtils.isNotBlank(flinkJarPath)) {
             properties.setFlinkJarPath(flinkJarPath);
+        }
+
+        String tableConfProp = cl.getOptionValue(OPTION_TABLE_CONF_PROP);
+        if (StringUtils.isNotBlank(tableConfProp)) {
+            properties.setTableConfProp(tableConfProp);
         }
     }
 

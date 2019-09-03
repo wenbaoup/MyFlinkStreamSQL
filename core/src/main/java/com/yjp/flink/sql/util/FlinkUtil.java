@@ -85,7 +85,7 @@ public class FlinkUtil {
             //start checkpoint every ${interval}
             env.enableCheckpointing(interval);
         }
-
+        //设置checkPoint 模式
         String checkMode = properties.getProperty(ConfigConstrant.FLINK_CHECKPOINT_MODE_KEY);
         if (checkMode != null) {
             if (ECheckPointMode.EXACTLY_ONCE.name().equalsIgnoreCase(checkMode)) {
@@ -96,21 +96,21 @@ public class FlinkUtil {
                 throw new RuntimeException("not support of FLINK_CHECKPOINT_MODE_KEY :" + checkMode);
             }
         }
-
+        //设置超时时间
         String checkpointTimeoutStr = properties.getProperty(ConfigConstrant.FLINK_CHECKPOINT_TIMEOUT_KEY);
         if (checkpointTimeoutStr != null) {
             Long checkpointTimeout = Long.valueOf(checkpointTimeoutStr);
             //checkpoints have to complete within one min,or are discard
             env.getCheckpointConfig().setCheckpointTimeout(checkpointTimeout);
         }
-
+        //设置checkPoint并发数
         String maxConcurrCheckpointsStr = properties.getProperty(ConfigConstrant.FLINK_MAXCONCURRENTCHECKPOINTS_KEY);
         if (maxConcurrCheckpointsStr != null) {
             Integer maxConcurrCheckpoints = Integer.valueOf(maxConcurrCheckpointsStr);
             //allow only one checkpoint to be int porgress at the same time
             env.getCheckpointConfig().setMaxConcurrentCheckpoints(maxConcurrCheckpoints);
         }
-
+        //设置cancel后的清理模式
         String cleanupModeStr = properties.getProperty(ConfigConstrant.FLINK_CHECKPOINT_CLEANUPMODE_KEY);
         if ("true".equalsIgnoreCase(cleanupModeStr)) {
             env.getCheckpointConfig().enableExternalizedCheckpoints(
@@ -121,12 +121,13 @@ public class FlinkUtil {
         } else {
             throw new RuntimeException("not support value of cleanup mode :" + cleanupModeStr);
         }
-
+        //checkPoint的后端地址
         String backendPath = properties.getProperty(ConfigConstrant.FLINK_CHECKPOINT_DATAURI_KEY);
         if (backendPath != null) {
-            // 默认FsStateBackend
             String stateBackendMode = properties.getProperty(ConfigConstrant.FLINK_CHECKPOINT_STATE_BACKEND_KEY);
+            // 默认FsStateBackend
             if (EStateBackendMode.RocksDBStateBackend.name().equalsIgnoreCase(stateBackendMode)) {
+                //配置RockDB参数
                 setRockDBState(backendPath, env);
             } else {
                 //set checkpoint save path on file system, 根据实际的需求设定文件路径,hdfs://, file://

@@ -60,6 +60,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamContextEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
@@ -93,10 +94,14 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static final int failureRate = 3;
-
-    private static final int failureInterval = 6; //min
-
-    private static final int delayInterval = 10; //sec
+    /**
+     * min
+     */
+    private static final int failureInterval = 6;
+    /**
+     * sec
+     */
+    private static final int delayInterval = 10;
 
     private static org.apache.calcite.sql.parser.SqlParser.Config config = org.apache.calcite.sql.parser.SqlParser
             .configBuilder()
@@ -117,6 +122,9 @@ public class Main {
         options.addOption("savePointPath", true, "Savepoint restore path");
         options.addOption("allowNonRestoredState", true, "Flag indicating whether non restored state is allowed if the savepoint");
 
+
+        options.addOption("tableConfProp", true, "flink table ref prop,eg specify Idle State Retention Time");
+
         CommandLineParser parser = new DefaultParser();
         CommandLine cl = parser.parse(options, args);
         String sql = cl.getOptionValue("sql");
@@ -126,14 +134,15 @@ public class Main {
         String remoteSqlPluginPath = cl.getOptionValue("remoteSqlPluginPath");
         String deployMode = cl.getOptionValue("mode");
         String confProp = cl.getOptionValue("confProp");
+        String tableConfProp = cl.getOptionValue("tableConfProp");
 
         Preconditions.checkNotNull(sql, "parameters of sql is required");
         Preconditions.checkNotNull(name, "parameters of name is required");
         Preconditions.checkNotNull(localSqlPluginPath, "parameters of localSqlPluginPath is required");
-
+        //解码之前编码的sql
         sql = URLDecoder.decode(sql, Charsets.UTF_8.name());
         SqlParser.setLocalSqlPluginRoot(localSqlPluginPath);
-
+        //自定义UDF使用的jar
         List<String> addJarFileList = Lists.newArrayList();
         if (!Strings.isNullOrEmpty(addJarListStr)) {
             addJarListStr = URLDecoder.decode(addJarListStr, Charsets.UTF_8.name());
@@ -144,12 +153,23 @@ public class Main {
         YjpClassLoader parentClassloader = new YjpClassLoader(new URL[]{}, threadClassLoader);
         Thread.currentThread().setContextClassLoader(parentClassloader);
 
+        //StreamExecutionEnvironment 配置
         confProp = URLDecoder.decode(confProp, Charsets.UTF_8.toString());
         Properties confProperties = PluginUtil.jsonStrToObject(confProp, Properties.class);
+        //根据配置文件设置env
         StreamExecutionEnvironment env = getStreamExeEnv(confProperties, deployMode);
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
+        //StreamTableEnvironment 配置
+        tableConfProp = URLDecoder.decode(tableConfProp, Charsets.UTF_8.toString());
+        Properties tableConfProperties = PluginUtil.jsonStrToObject(tableConfProp, Properties.class);
+        //配置状态过期时间
+        TableConfig tableConfig = tableEnv.getConfig();
+        //这里暂时只设置过期时间 后期需要修改本方法
+        setTableConfig(tableConfig, tableConfProperties);
+
         List<URL> jarURList = Lists.newArrayList();
+        //解析sql
         SqlTree sqlTree = SqlParser.parseSql(sql);
 
         //Get External jar to load
@@ -216,6 +236,12 @@ public class Main {
         }
 
         env.execute(name);
+    }
+
+    private static void setTableConfig(TableConfig tableConfig, Properties tableConfProperties) {
+        tableConfig.setIdleStateRetentionTime(
+                Time.hours(Long.parseLong(tableConfProperties.getProperty("table.conf.idlestateretentiontime.min"))),
+                Time.hours(Long.parseLong(tableConfProperties.getProperty("table.conf.idlestateretentiontime.max"))));
     }
 
     /**
@@ -327,6 +353,7 @@ public class Main {
 
         env.setParallelism(FlinkUtil.getEnvParallelism(confProperties));
         Configuration globalJobParameters = new Configuration();
+        //本质是就是将confProperties中的数据变为了HashMap然后传入Configuration
         Method method = Configuration.class.getDeclaredMethod("setValueInternal", String.class, Object.class);
         method.setAccessible(true);
 
@@ -337,8 +364,8 @@ public class Main {
                 e.printStackTrace();
             }
         });
-
         ExecutionConfig exeConfig = env.getConfig();
+        //env中是否设置过全局变量
         if (exeConfig.getGlobalJobParameters() == null) {
             exeConfig.setGlobalJobParameters(globalJobParameters);
         } else if (exeConfig.getGlobalJobParameters() instanceof Configuration) {
@@ -353,14 +380,15 @@ public class Main {
         if (FlinkUtil.getBufferTimeoutMillis(confProperties) > 0) {
             env.setBufferTimeout(FlinkUtil.getBufferTimeoutMillis(confProperties));
         }
-
+        //配置重启策略
         env.setRestartStrategy(RestartStrategies.failureRateRestart(
                 failureRate,
                 Time.of(failureInterval, TimeUnit.MINUTES),
                 Time.of(delayInterval, TimeUnit.SECONDS)
         ));
-
+        //设置时间策略  默认process time
         FlinkUtil.setStreamTimeCharacteristic(env, confProperties);
+        //配置checkPoint
         FlinkUtil.openCheckpoint(env, confProperties);
 
         return env;
