@@ -709,7 +709,7 @@ public class SideSqlExec {
 
         replaceInfoList.add(replaceInfo);
 
-        if (new ArrayList<>(Arrays.asList(tableEnv.listTables())).contains(joinInfo.getNewTableName())) {
+        if (!new ArrayList<>(Arrays.asList(tableEnv.listTables())).contains(joinInfo.getNewTableName())) {
             tableEnv.registerDataStream(joinInfo.getNewTableName(), dsOut, String.join(",", sideOutTypeInfo.getFieldNames()));
 
         }
