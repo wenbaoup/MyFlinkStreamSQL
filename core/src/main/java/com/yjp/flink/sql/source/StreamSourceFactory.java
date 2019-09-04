@@ -46,14 +46,17 @@ public class StreamSourceFactory {
     public static AbsSourceParser getSqlParser(String pluginType, String sqlRootDir) throws Exception {
 
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-
+        //补充remoteSqlPluginPath的路径 确定加载的路径
         String pluginJarPath = PluginUtil.getJarFileDirPath(String.format(DIR_NAME_FORMAT, pluginType), sqlRootDir);
 
         YjpClassLoader dtClassLoader = (YjpClassLoader) classLoader;
+        //通过绝对路径加载需要的Jar
         PluginUtil.addPluginJar(pluginJarPath, dtClassLoader);
-
+        //typeNoVersion 去掉版本 如kafka11  typeNoVersion=kafka
         String typeNoVersion = YjpStringUtil.getPluginTypeWithoutVersion(pluginType);
+        //得到KafkaSourceParser 的类名
         String className = PluginUtil.getSqlParserClassName(typeNoVersion, CURR_TYPE);
+        //获取子类的CLass对象
         Class<?> sourceParser = dtClassLoader.loadClass(className);
         if (!AbsSourceParser.class.isAssignableFrom(sourceParser)) {
             throw new RuntimeException("class " + sourceParser.getName() + " not subClass of AbsSourceParser");

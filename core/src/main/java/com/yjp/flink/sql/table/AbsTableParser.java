@@ -49,6 +49,7 @@ public abstract class AbsTableParser {
 
     static {
         keyPatternMap.put(PRIMARY_KEY, primaryKeyPattern);
+
         keyHandlerMap.put(PRIMARY_KEY, AbsTableParser::dealPrimaryKey);
     }
 
@@ -59,10 +60,12 @@ public abstract class AbsTableParser {
     public abstract TableInfo getTableInfo(String tableName, String fieldsInfo, Map<String, Object> props) throws Exception;
 
     public boolean dealKeyPattern(String fieldRow, TableInfo tableInfo) {
+        //keyPatternMap 由 AbsTableParser, AbsSourceParser 以及不同子类初始化KafkaSourceParser
         for (Map.Entry<String, Pattern> keyPattern : keyPatternMap.entrySet()) {
             Pattern pattern = keyPattern.getValue();
             String key = keyPattern.getKey();
             Matcher matcher = pattern.matcher(fieldRow);
+            //如果是维表会去掉  PERIOD FOR SYSTEM_TIME 新增 tableInfo中的primaryKeys
             if (matcher.find()) {
                 ITableFieldDealHandler handler = keyHandlerMap.get(key);
                 if (handler == null) {

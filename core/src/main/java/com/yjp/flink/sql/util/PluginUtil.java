@@ -132,7 +132,7 @@ public class PluginUtil {
         if (!dirFile.exists() || !dirFile.isDirectory()) {
             throw new RuntimeException("plugin path:" + pluginDir + "is not exist.");
         }
-
+        //在传入的路径下寻找以 .jar结尾 的jar包
         File[] files = dirFile.listFiles(tmpFile -> tmpFile.isFile() && tmpFile.getName().endsWith(JAR_SUFFIX));
         if (files == null || files.length == 0) {
             throw new RuntimeException("plugin path:" + pluginDir + " is null.");

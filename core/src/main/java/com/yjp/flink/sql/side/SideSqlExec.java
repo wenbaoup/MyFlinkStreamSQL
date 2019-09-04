@@ -666,7 +666,7 @@ public class SideSqlExec {
         joinScope.addScope(leftScopeChild);
         joinScope.addScope(rightScopeChild);
 
-        //获取两个表的所有字段
+        //获取两张表的所有字段
         List<FieldInfo> sideJoinFieldInfo = ParserJoinField.getRowTypeInfo(joinInfo.getSelectNode(), joinScope, true);
 
         String leftTableAlias = joinInfo.getLeftTableAlias();
@@ -708,8 +708,13 @@ public class SideSqlExec {
         replaceInfo.setTargetTableAlias(targetTableAlias);
 
         replaceInfoList.add(replaceInfo);
+
+        if (new ArrayList<>(Arrays.asList(tableEnv.listTables())).contains(joinInfo.getNewTableName())) {
+            tableEnv.registerDataStream(joinInfo.getNewTableName(), dsOut, String.join(",", sideOutTypeInfo.getFieldNames()));
+
+        }
 //        if (!tableEnv.isRegistered(joinInfo.getNewTableName())) {
-        tableEnv.registerDataStream(joinInfo.getNewTableName(), dsOut, String.join(",", sideOutTypeInfo.getFieldNames()));
+//        tableEnv.registerDataStream(joinInfo.getNewTableName(), dsOut, String.join(",", sideOutTypeInfo.getFieldNames()));
 //        }
     }
 

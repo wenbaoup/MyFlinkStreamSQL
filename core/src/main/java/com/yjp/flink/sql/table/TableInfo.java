@@ -77,6 +77,9 @@ public abstract class TableInfo implements Serializable {
 
     public abstract boolean check();
 
+    /**
+     * @return 返回传入with中的type
+     */
     public String getType() {
         return type;
     }

@@ -299,9 +299,7 @@ public class Main {
 
                 RowTypeInfo typeInfo = new RowTypeInfo(adaptTable.getSchema().getFieldTypes(), adaptTable.getSchema().getFieldNames());
                 DataStream adaptStream = tableEnv.toRetractStream(adaptTable, typeInfo)
-                        .map((Tuple2<Boolean, Row> f0) -> {
-                            return f0.f1;
-                        })
+                        .map((Tuple2<Boolean, Row> f0) -> f0.f1)
                         .returns(typeInfo);
 
                 String fields = String.join(",", typeInfo.getFieldNames());

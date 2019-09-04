@@ -82,7 +82,8 @@ public class KafkaSource implements IStreamSourceGener<Table> {
         //earliest,latest
         if ("earliest".equalsIgnoreCase(kafka011SourceTableInfo.getOffsetReset())) {
             kafkaSrc.setStartFromEarliest();
-        } else if (YjpStringUtil.isJosn(kafka011SourceTableInfo.getOffsetReset())) {// {"0":12312,"1":12321,"2":12312}
+            // {"0":12312,"1":12321,"2":12312}
+        } else if (YjpStringUtil.isJosn(kafka011SourceTableInfo.getOffsetReset())) {
             try {
                 Properties properties = PluginUtil.jsonStrToObject(kafka011SourceTableInfo.getOffsetReset(), Properties.class);
                 Map<String, Object> offsetMap = PluginUtil.ObjectToMap(properties);

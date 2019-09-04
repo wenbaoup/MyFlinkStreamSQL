@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.parser;
 
@@ -36,6 +35,7 @@ import static org.apache.calcite.sql.SqlKind.IDENTIFIER;
  * sql 只支持 insert 开头的
  * Date: 2018/6/22
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -46,7 +46,7 @@ public class InsertSqlParser implements IParser {
         return StringUtils.isNotBlank(sql) && sql.trim().toLowerCase().startsWith("insert");
     }
 
-    public static InsertSqlParser newInstance(){
+    public static InsertSqlParser newInstance() {
         InsertSqlParser parser = new InsertSqlParser();
         return parser;
     }
@@ -57,73 +57,80 @@ public class InsertSqlParser implements IParser {
                 .configBuilder()
                 .setLex(Lex.MYSQL)
                 .build();
-        SqlParser sqlParser = SqlParser.create(sql,config);
+        //以mysql的模式解析
+        SqlParser sqlParser = SqlParser.create(sql, config);
         SqlNode sqlNode = null;
         try {
+            //sql解析 insert into  MyResult  select m.id,m.title,s.tablename1,PROCTIME  from MyTable m  left join sideTable s on m.id=s.id ;
+            //targetTable  MyResult
+            // sourceTable  select m.id,m.title,s.tablename1,PROCTIME  from MyTable m  left join sideTable s on m.id=s.id
+            //selectList m.id,m.title,s.tablename1,PROCTIME
+            // from 默认补充as
             sqlNode = sqlParser.parseStmt();
         } catch (SqlParseException e) {
             throw new RuntimeException("", e);
         }
 
         SqlParseResult sqlParseResult = new SqlParseResult();
+        //将targetTable  MyResult  sourceTable MyTable,sideTable 解析出来放入sqlParseResult
         parseNode(sqlNode, sqlParseResult);
         sqlParseResult.setExecSql(sqlNode.toString());
         sqlTree.addExecSql(sqlParseResult);
     }
 
-    private static void parseNode(SqlNode sqlNode, SqlParseResult sqlParseResult){
+    private static void parseNode(SqlNode sqlNode, SqlParseResult sqlParseResult) {
         SqlKind sqlKind = sqlNode.getKind();
-        switch (sqlKind){
+        switch (sqlKind) {
             case INSERT:
-                SqlNode sqlTarget = ((SqlInsert)sqlNode).getTargetTable();
-                SqlNode sqlSource = ((SqlInsert)sqlNode).getSource();
+                SqlNode sqlTarget = ((SqlInsert) sqlNode).getTargetTable();
+                SqlNode sqlSource = ((SqlInsert) sqlNode).getSource();
                 sqlParseResult.addTargetTable(sqlTarget.toString());
                 parseNode(sqlSource, sqlParseResult);
                 break;
             case SELECT:
-                SqlNode sqlFrom = ((SqlSelect)sqlNode).getFrom();
-                if(sqlFrom.getKind() == IDENTIFIER){
+                SqlNode sqlFrom = ((SqlSelect) sqlNode).getFrom();
+                if (sqlFrom.getKind() == IDENTIFIER) {
                     sqlParseResult.addSourceTable(sqlFrom.toString());
-                }else{
+                } else {
                     parseNode(sqlFrom, sqlParseResult);
                 }
                 break;
             case JOIN:
-                SqlNode leftNode = ((SqlJoin)sqlNode).getLeft();
-                SqlNode rightNode = ((SqlJoin)sqlNode).getRight();
+                SqlNode leftNode = ((SqlJoin) sqlNode).getLeft();
+                SqlNode rightNode = ((SqlJoin) sqlNode).getRight();
 
-                if(leftNode.getKind() == IDENTIFIER){
+                if (leftNode.getKind() == IDENTIFIER) {
                     sqlParseResult.addSourceTable(leftNode.toString());
-                }else{
+                } else {
                     parseNode(leftNode, sqlParseResult);
                 }
 
-                if(rightNode.getKind() == IDENTIFIER){
+                if (rightNode.getKind() == IDENTIFIER) {
                     sqlParseResult.addSourceTable(rightNode.toString());
-                }else{
+                } else {
                     parseNode(rightNode, sqlParseResult);
                 }
                 break;
             case AS:
                 //不解析column,所以 as 相关的都是表
-                SqlNode identifierNode = ((SqlBasicCall)sqlNode).getOperands()[0];
-                if(identifierNode.getKind() != IDENTIFIER){
+                SqlNode identifierNode = ((SqlBasicCall) sqlNode).getOperands()[0];
+                if (identifierNode.getKind() != IDENTIFIER) {
                     parseNode(identifierNode, sqlParseResult);
-                }else {
+                } else {
                     sqlParseResult.addSourceTable(identifierNode.toString());
                 }
                 break;
             case UNION:
-                SqlNode unionLeft = ((SqlBasicCall)sqlNode).getOperands()[0];
-                SqlNode unionRight = ((SqlBasicCall)sqlNode).getOperands()[1];
-                if(unionLeft.getKind() == IDENTIFIER){
+                SqlNode unionLeft = ((SqlBasicCall) sqlNode).getOperands()[0];
+                SqlNode unionRight = ((SqlBasicCall) sqlNode).getOperands()[1];
+                if (unionLeft.getKind() == IDENTIFIER) {
                     sqlParseResult.addSourceTable(unionLeft.toString());
-                }else{
+                } else {
                     parseNode(unionLeft, sqlParseResult);
                 }
-                if(unionRight.getKind() == IDENTIFIER){
+                if (unionRight.getKind() == IDENTIFIER) {
                     sqlParseResult.addSourceTable(unionRight.toString());
-                }else{
+                } else {
                     parseNode(unionRight, sqlParseResult);
                 }
                 break;
@@ -141,11 +148,11 @@ public class InsertSqlParser implements IParser {
 
         private String execSql;
 
-        public void addSourceTable(String sourceTable){
+        public void addSourceTable(String sourceTable) {
             sourceTableList.add(sourceTable);
         }
 
-        public void addTargetTable(String targetTable){
+        public void addTargetTable(String targetTable) {
             targetTableList.add(targetTable);
         }
 

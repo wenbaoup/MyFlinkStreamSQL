@@ -62,6 +62,7 @@ public class CreateTableParser implements IParser {
 
             SqlParserResult result = new SqlParserResult();
             result.setTableName(tableName);
+            //字段信息 类型和名称
             result.setFieldsInfoStr(fieldsInfoStr);
             result.setPropMap(props);
             //将tableName和所有连接信息放入preDealTableMap

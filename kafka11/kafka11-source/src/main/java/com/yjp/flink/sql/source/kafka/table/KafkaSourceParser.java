@@ -78,6 +78,7 @@ public class KafkaSourceParser extends AbsSourceParser {
 
         KafkaSourceTableInfo kafka11SourceTableInfo = new KafkaSourceTableInfo();
         kafka11SourceTableInfo.setName(tableName);
+        //kafka11SourceTableInfo 获取字段名称和类型
         parseFieldsInfo(fieldsInfo, kafka11SourceTableInfo);
 
         kafka11SourceTableInfo.setParallelism(MathUtil.getIntegerVal(props.get(KafkaSourceTableInfo.PARALLELISM_KEY.toLowerCase())));

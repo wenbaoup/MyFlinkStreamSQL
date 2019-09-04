@@ -57,18 +57,19 @@ public class LauncherMain {
 
     private static String getLocalCoreJarPath(String localSqlRootJar) throws Exception {
         String jarPath = PluginUtil.getCoreJarFileName(localSqlRootJar, CORE_JAR);
-        String corePath = localSqlRootJar + SP + jarPath;
-        return corePath;
+        return localSqlRootJar + SP + jarPath;
     }
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1 && args[0].endsWith(".json")) {
+            //读取json文件内容转换为数组信息
             args = parseJson(args);
         }
-
+        //解析参数 转换为LauncherOptions对象 POJO
         LauncherOptionParser optionParser = new LauncherOptionParser(args);
         LauncherOptions launcherOptions = optionParser.getLauncherOptions();
         String mode = launcherOptions.getMode();
+        //将flinkconf，yarnconf，flinkJarPath抛弃  其他的装入List  key前面多-
         List<String> argList = optionParser.getProgramExeArgList();
 
         if (mode.equals(ClusterMode.local.name())) {
@@ -80,6 +81,7 @@ public class LauncherMain {
         String pluginRoot = launcherOptions.getLocalSqlPluginPath();
         File jarFile = new File(getLocalCoreJarPath(pluginRoot));
         String[] remoteArgs = argList.toArray(new String[argList.size()]);
+        //最终还是调用com.yjp.flink.sql.Main
         PackagedProgram program = new PackagedProgram(jarFile, Lists.newArrayList(), remoteArgs);
 
         if (StringUtils.isNotBlank(launcherOptions.getSavePointPath())) {
@@ -102,14 +104,14 @@ public class LauncherMain {
 
     private static String[] parseJson(String[] args) {
         BufferedReader reader = null;
-        String lastStr = "";
+        StringBuilder lastStr = new StringBuilder();
         try {
             FileInputStream fileInputStream = new FileInputStream(args[0]);
             InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, "UTF-8");
             reader = new BufferedReader(inputStreamReader);
             String tempString = null;
             while ((tempString = reader.readLine()) != null) {
-                lastStr += tempString;
+                lastStr.append(tempString);
             }
             reader.close();
         } catch (IOException e) {
@@ -123,7 +125,7 @@ public class LauncherMain {
                 }
             }
         }
-        Map<String, Object> map = JSON.parseObject(lastStr, new com.alibaba.fastjson.TypeReference<Map<String, Object>>() {
+        Map<String, Object> map = JSON.parseObject(lastStr.toString(), new com.alibaba.fastjson.TypeReference<Map<String, Object>>() {
         });
         List<String> list = new LinkedList<>();
 
@@ -131,7 +133,6 @@ public class LauncherMain {
             list.add("-" + entry.getKey());
             list.add(entry.getValue().toString());
         }
-        String[] array = list.toArray(new String[list.size()]);
-        return array;
+        return list.toArray(new String[list.size()]);
     }
 }

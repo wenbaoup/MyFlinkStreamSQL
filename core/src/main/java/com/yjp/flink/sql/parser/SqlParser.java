@@ -87,7 +87,7 @@ public class SqlParser {
                 if (!sqlParser.verify(childSql)) {
                     continue;
                 }
-
+                // 将不同类型的sql 转换为不同的成员变量 放入sqlTree
                 sqlParser.parseSql(childSql, sqlTree);
                 result = true;
             }
@@ -97,7 +97,7 @@ public class SqlParser {
             }
         }
 
-        //解析exec-sql
+        //解析exec-sql  没有insert into 说明sql没有执行语句
         if (sqlTree.getExecSqlList().size() == 0) {
             throw new RuntimeException("sql no executable statement");
         }
@@ -113,7 +113,7 @@ public class SqlParser {
                     if (createTableResult == null) {
                         throw new RuntimeException("can't find table " + tableName);
                     }
-
+                    //为tableInfo赋值 通过反射new出不同的子类对象
                     TableInfo tableInfo = tableInfoParser.parseWithTableType(ETableType.SOURCE.getType(),
                             createTableResult, LOCAL_SQL_PLUGIN_ROOT);
                     sqlTree.addTableInfo(tableName, tableInfo);
@@ -126,7 +126,7 @@ public class SqlParser {
                     if (createTableResult == null) {
                         throw new RuntimeException("can't find table " + tableName);
                     }
-
+                    //为tableInfo赋值 通过反射new出不同的子类对象
                     TableInfo tableInfo = tableInfoParser.parseWithTableType(ETableType.SINK.getType(),
                             createTableResult, LOCAL_SQL_PLUGIN_ROOT);
                     sqlTree.addTableInfo(tableName, tableInfo);
