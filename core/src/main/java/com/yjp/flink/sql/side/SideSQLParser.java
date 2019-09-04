@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.side;
 
@@ -37,6 +36,7 @@ import static org.apache.calcite.sql.SqlKind.*;
  * Parsing sql, obtain execution information dimension table
  * Date: 2018/7/24
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -50,34 +50,35 @@ public class SideSQLParser {
                 .configBuilder()
                 .setLex(Lex.MYSQL)
                 .build();
-        SqlParser sqlParser = SqlParser.create(exeSql,config);
+        //用mysql语法 解析sql
+        SqlParser sqlParser = SqlParser.create(exeSql, config);
         SqlNode sqlNode = sqlParser.parseStmt();
         parseSql(sqlNode, sideTableSet, queueInfo);
         queueInfo.offer(sqlNode);
         return queueInfo;
     }
 
-    private Object parseSql(SqlNode sqlNode, Set<String> sideTableSet, Queue<Object> queueInfo){
+    private Object parseSql(SqlNode sqlNode, Set<String> sideTableSet, Queue<Object> queueInfo) {
         SqlKind sqlKind = sqlNode.getKind();
-        switch (sqlKind){
+        switch (sqlKind) {
             case INSERT:
-                SqlNode sqlSource = ((SqlInsert)sqlNode).getSource();
+                SqlNode sqlSource = ((SqlInsert) sqlNode).getSource();
                 return parseSql(sqlSource, sideTableSet, queueInfo);
             case SELECT:
-                SqlNode sqlFrom = ((SqlSelect)sqlNode).getFrom();
-                if(sqlFrom.getKind() != IDENTIFIER){
+                SqlNode sqlFrom = ((SqlSelect) sqlNode).getFrom();
+                if (sqlFrom.getKind() != IDENTIFIER) {
                     Object result = parseSql(sqlFrom, sideTableSet, queueInfo);
-                    if(result instanceof JoinInfo){
-                        dealSelectResultWithJoinInfo((JoinInfo)result, (SqlSelect) sqlNode, queueInfo);
-                    }else if(result instanceof AliasInfo){
+                    if (result instanceof JoinInfo) {
+                        dealSelectResultWithJoinInfo((JoinInfo) result, (SqlSelect) sqlNode, queueInfo);
+                    } else if (result instanceof AliasInfo) {
                         String tableName = ((AliasInfo) result).getName();
-                        if(sideTableSet.contains(tableName)){
+                        if (sideTableSet.contains(tableName)) {
                             throw new RuntimeException("side-table must be used in join operator");
                         }
                     }
-                }else{
-                    String tableName = ((SqlIdentifier)sqlFrom).getSimple();
-                    if(sideTableSet.contains(tableName)){
+                } else {
+                    String tableName = ((SqlIdentifier) sqlFrom).getSimple();
+                    if (sideTableSet.contains(tableName)) {
                         throw new RuntimeException("side-table must be used in join operator");
                     }
                 }
@@ -85,13 +86,13 @@ public class SideSQLParser {
             case JOIN:
                 return dealJoinNode((SqlJoin) sqlNode, sideTableSet, queueInfo);
             case AS:
-                SqlNode info = ((SqlBasicCall)sqlNode).getOperands()[0];
+                SqlNode info = ((SqlBasicCall) sqlNode).getOperands()[0];
                 SqlNode alias = ((SqlBasicCall) sqlNode).getOperands()[1];
                 String infoStr;
 
-                if(info.getKind() == IDENTIFIER){
+                if (info.getKind() == IDENTIFIER) {
                     infoStr = info.toString();
-                }else{
+                } else {
                     infoStr = parseSql(info, sideTableSet, queueInfo).toString();
                 }
 
@@ -100,61 +101,62 @@ public class SideSQLParser {
                 aliasInfo.setAlias(alias.toString());
 
                 return aliasInfo;
+            default:
         }
 
         return "";
     }
 
-    private JoinInfo dealJoinNode(SqlJoin joinNode, Set<String> sideTableSet, Queue<Object> queueInfo){
+    private JoinInfo dealJoinNode(SqlJoin joinNode, Set<String> sideTableSet, Queue<Object> queueInfo) {
         SqlNode leftNode = joinNode.getLeft();
         SqlNode rightNode = joinNode.getRight();
         JoinType joinType = joinNode.getJoinType();
         String leftTbName = "";
         String leftTbAlias = "";
 
-        if(leftNode.getKind() == IDENTIFIER){
+        if (leftNode.getKind() == IDENTIFIER) {
             leftTbName = leftNode.toString();
-        }else if(leftNode.getKind() == JOIN){
+        } else if (leftNode.getKind() == JOIN) {
             Object leftNodeJoinInfo = parseSql(leftNode, sideTableSet, queueInfo);
             System.out.println(leftNodeJoinInfo);
-        }else if(leftNode.getKind() == AS){
+        } else if (leftNode.getKind() == AS) {
             AliasInfo aliasInfo = (AliasInfo) parseSql(leftNode, sideTableSet, queueInfo);
             leftTbName = aliasInfo.getName();
             leftTbAlias = aliasInfo.getAlias();
-        }else{
+        } else {
             throw new RuntimeException("---not deal---");
         }
 
         boolean leftIsSide = checkIsSideTable(leftTbName, sideTableSet);
-        if(leftIsSide){
+        if (leftIsSide) {
             throw new RuntimeException("side-table must be at the right of join operator");
         }
 
         String rightTableName = "";
         String rightTableAlias = "";
 
-        if(rightNode.getKind() == IDENTIFIER){
+        if (rightNode.getKind() == IDENTIFIER) {
             rightTableName = rightNode.toString();
-        }else{
-            AliasInfo aliasInfo = (AliasInfo)parseSql(rightNode, sideTableSet, queueInfo);
+        } else {
+            AliasInfo aliasInfo = (AliasInfo) parseSql(rightNode, sideTableSet, queueInfo);
             rightTableName = aliasInfo.getName();
             rightTableAlias = aliasInfo.getAlias();
         }
 
         boolean rightIsSide = checkIsSideTable(rightTableName, sideTableSet);
-        if(joinType == JoinType.RIGHT){
+        if (joinType == JoinType.RIGHT) {
             throw new RuntimeException("side join not support join type of right[current support inner join and left join]");
         }
 
         JoinInfo tableInfo = new JoinInfo();
         tableInfo.setLeftTableName(leftTbName);
         tableInfo.setRightTableName(rightTableName);
-        if (leftTbAlias.equals("")){
+        if ("".equals(leftTbAlias)) {
             tableInfo.setLeftTableAlias(leftTbName);
         } else {
             tableInfo.setLeftTableAlias(leftTbAlias);
         }
-        if (leftTbAlias.equals("")){
+        if ("".equals(leftTbAlias)) {
             tableInfo.setRightTableAlias(rightTableName);
         } else {
             tableInfo.setRightTableAlias(rightTableAlias);
@@ -170,21 +172,21 @@ public class SideSQLParser {
     }
 
 
-    private void dealSelectResultWithJoinInfo(JoinInfo joinInfo, SqlSelect sqlNode, Queue<Object> queueInfo){
+    private void dealSelectResultWithJoinInfo(JoinInfo joinInfo, SqlSelect sqlNode, Queue<Object> queueInfo) {
         //SideJoinInfo rename
-        if(joinInfo.checkIsSide()){
+        if (joinInfo.checkIsSide()) {
             joinInfo.setSelectFields(sqlNode.getSelectList());
             joinInfo.setSelectNode(sqlNode);
-            if(joinInfo.isRightIsSideTable()){
+            if (joinInfo.isRightIsSideTable()) {
                 //Analyzing left is not a simple table
-                if(joinInfo.getLeftNode().toString().contains("SELECT")){
+                if (joinInfo.getLeftNode().toString().contains("SELECT")) {
                     queueInfo.offer(joinInfo.getLeftNode());
                 }
 
                 queueInfo.offer(joinInfo);
-            }else{
+            } else {
                 //Determining right is not a simple table
-                if(joinInfo.getRightNode().getKind() == SELECT){
+                if (joinInfo.getRightNode().getKind() == SELECT) {
                     queueInfo.offer(joinInfo.getLeftNode());
                 }
 
@@ -209,8 +211,8 @@ public class SideSQLParser {
         }
     }
 
-    private boolean checkIsSideTable(String tableName, Set<String> sideTableList){
-        if(sideTableList.contains(tableName)){
+    private boolean checkIsSideTable(String tableName, Set<String> sideTableList) {
+        if (sideTableList.contains(tableName)) {
             return true;
         }
 

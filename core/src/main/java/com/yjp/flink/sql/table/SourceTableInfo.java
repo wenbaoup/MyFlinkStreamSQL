@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.table;
 
@@ -33,6 +32,7 @@ import java.util.TimeZone;
  * Reason:
  * Date: 2018/6/25
  * Company: www.yjp.com
+ *
  * @author xuchao
  */
 
@@ -40,9 +40,9 @@ public abstract class SourceTableInfo extends TableInfo {
 
     public static final String SOURCE_SUFFIX = "Source";
 
-    public static final String TIME_ZONE_KEY="timezone";
+    public static final String TIME_ZONE_KEY = "timezone";
 
-    private String timeZone=TimeZone.getDefault().getID();
+    private String timeZone = TimeZone.getDefault().getID();
 
     private String eventTimeField;
 
@@ -52,7 +52,7 @@ public abstract class SourceTableInfo extends TableInfo {
 
     @Override
     public boolean check() {
-       return true;
+        return true;
     }
 
     public String getEventTimeField() {
@@ -68,7 +68,7 @@ public abstract class SourceTableInfo extends TableInfo {
     }
 
     public void setMaxOutOrderness(Integer maxOutOrderness) {
-        if(maxOutOrderness == null){
+        if (maxOutOrderness == null) {
             return;
         }
         this.maxOutOrderness = maxOutOrderness;
@@ -82,30 +82,30 @@ public abstract class SourceTableInfo extends TableInfo {
         this.virtualFields = virtualFields;
     }
 
-    public void addVirtualField(String fieldName, String expression){
+    public void addVirtualField(String fieldName, String expression) {
         virtualFields.put(fieldName, expression);
     }
 
-    public String getAdaptSelectSql(){
+    public String getAdaptSelectSql() {
         String fields = String.join(",", getFields());
-        String virtualFieldsStr = "";
+        StringBuilder virtualFieldsStr = new StringBuilder();
 
-        if(virtualFields.size() == 0){
+        if (virtualFields.size() == 0) {
             return null;
         }
 
-        for(Map.Entry<String, String> entry : virtualFields.entrySet()){
-            virtualFieldsStr += entry.getValue() +" AS " + entry.getKey() + ",";
+        for (Map.Entry<String, String> entry : virtualFields.entrySet()) {
+            virtualFieldsStr.append(entry.getValue()).append(" AS ").append(entry.getKey()).append(",");
         }
 
-        if(!Strings.isNullOrEmpty(virtualFieldsStr)){
+        if (!Strings.isNullOrEmpty(virtualFieldsStr.toString())) {
             fields += "," + virtualFieldsStr.substring(0, virtualFieldsStr.lastIndexOf(","));
         }
 
         return String.format("select %s from %s", fields, getAdaptName());
     }
 
-    public String getAdaptName(){
+    public String getAdaptName() {
         return getName() + "_adapt";
     }
 
@@ -114,7 +114,7 @@ public abstract class SourceTableInfo extends TableInfo {
     }
 
     public void setTimeZone(String timeZone) {
-        if (StringUtils.isNullOrWhitespaceOnly(timeZone)){
+        if (StringUtils.isNullOrWhitespaceOnly(timeZone)) {
             return;
         }
         timeZoneCheck(timeZone);
@@ -123,8 +123,8 @@ public abstract class SourceTableInfo extends TableInfo {
 
     private void timeZoneCheck(String timeZone) {
         ArrayList<String> zones = Lists.newArrayList(TimeZone.getAvailableIDs());
-        if (!zones.contains(timeZone)){
-            throw  new IllegalArgumentException(" timezone is Incorrect!");
+        if (!zones.contains(timeZone)) {
+            throw new IllegalArgumentException(" timezone is Incorrect!");
         }
     }
 }

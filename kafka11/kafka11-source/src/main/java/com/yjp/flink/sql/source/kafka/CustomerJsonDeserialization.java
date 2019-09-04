@@ -164,6 +164,8 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
             dirtyDataCounter.inc();
             return null;
         } finally {
+            //每次都会清除对应关系 这里的对应关系是 json字符串中的name 和名称
+            //"a": {"b": {"c": "ccc"} } 嵌套json会被解析为a.b.c
             nodeAndJsonNodeMapping.clear();
         }
     }

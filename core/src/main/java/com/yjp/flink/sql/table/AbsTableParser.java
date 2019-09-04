@@ -65,7 +65,7 @@ public abstract class AbsTableParser {
             Pattern pattern = keyPattern.getValue();
             String key = keyPattern.getKey();
             Matcher matcher = pattern.matcher(fieldRow);
-            //如果是维表会去掉  PERIOD FOR SYSTEM_TIME 新增 tableInfo中的primaryKeys
+            //如果是维表会去掉  PERIOD FOR SYSTEM_TIME 新增 tableInfo中的primaryKeys  如果a.b.c VARCHAR AS c 则保存映射
             if (matcher.find()) {
                 ITableFieldDealHandler handler = keyHandlerMap.get(key);
                 if (handler == null) {

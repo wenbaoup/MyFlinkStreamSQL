@@ -53,7 +53,7 @@ public class KafkaSourceParser extends AbsSourceParser {
     }
 
     /**
-     * add parser for alias field
+     * add parser for alias field  如 a.b.c VARCHAR AS c
      *
      * @param matcher
      * @param tableInfo

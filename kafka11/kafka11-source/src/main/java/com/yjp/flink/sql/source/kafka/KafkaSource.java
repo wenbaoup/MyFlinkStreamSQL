@@ -102,6 +102,6 @@ public class KafkaSource implements IStreamSourceGener<Table> {
         String fields = StringUtils.join(kafka011SourceTableInfo.getFields(), ",");
         String sourceOperatorName = SOURCE_OPERATOR_NAME_TPL.replace("${topic}", topicName).replace("${table}", sourceTableInfo.getName());
         DataStreamSource<Row> kafkaSource = env.addSource(kafkaSrc, sourceOperatorName, rowTypeInfo);
-        return tableEnv.fromDataStream(kafkaSource.returns(new RowTypeInfo(types)), fields);
+        return tableEnv.fromDataStream(kafkaSource.returns(rowTypeInfo), fields);
     }
 }

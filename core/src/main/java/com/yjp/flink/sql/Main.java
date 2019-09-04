@@ -161,12 +161,14 @@ public class Main {
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
 
         //StreamTableEnvironment 配置
-        tableConfProp = URLDecoder.decode(tableConfProp, Charsets.UTF_8.toString());
-        Properties tableConfProperties = PluginUtil.jsonStrToObject(tableConfProp, Properties.class);
-        //配置状态过期时间
-        TableConfig tableConfig = tableEnv.getConfig();
-        //这里暂时只设置过期时间 后期需要修改本方法
-        setTableConfig(tableConfig, tableConfProperties);
+        if (tableConfProp != null) {
+            tableConfProp = URLDecoder.decode(tableConfProp, Charsets.UTF_8.toString());
+            Properties tableConfProperties = PluginUtil.jsonStrToObject(tableConfProp, Properties.class);
+            //配置状态过期时间
+            TableConfig tableConfig = tableEnv.getConfig();
+            //这里暂时只设置过期时间 后期需要修改本方法
+            setTableConfig(tableConfig, tableConfProperties);
+        }
 
         List<URL> jarURList = Lists.newArrayList();
         //解析sql
@@ -179,18 +181,18 @@ public class Main {
         }
 
         Map<String, SideTableInfo> sideTableMap = Maps.newHashMap();
-        Map<String, Table> registerTableCache = Maps.newHashMap();
+        Map<String, Table> registerSourceTableCache = Maps.newHashMap();
 
         //register udf
         registerUDF(sqlTree, jarURList, parentClassloader, tableEnv);
         //register table schema
-        registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerTableCache);
+        registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerSourceTableCache);
 
         SideSqlExec sideSqlExec = new SideSqlExec();
         sideSqlExec.setLocalSqlPluginPath(localSqlPluginPath);
 
         for (CreateTmpTableParser.SqlParserResult result : sqlTree.getTmpSqlList()) {
-            sideSqlExec.registerTmpTable(result, sideTableMap, tableEnv, registerTableCache);
+            sideSqlExec.registerTmpTable(result, sideTableMap, tableEnv, registerSourceTableCache);
         }
 
         for (InsertSqlParser.SqlParseResult result : sqlTree.getExecSqlList()) {
@@ -207,7 +209,7 @@ public class Main {
                     SqlNode sqlNode = org.apache.calcite.sql.parser.SqlParser.create(realSql, config).parseStmt();
                     String tmpSql = ((SqlInsert) sqlNode).getSource().toString();
                     tmp.setExecSql(tmpSql);
-                    sideSqlExec.registerTmpTable(tmp, sideTableMap, tableEnv, registerTableCache);
+                    sideSqlExec.registerTmpTable(tmp, sideTableMap, tableEnv, registerSourceTableCache);
                 } else {
                     for (String sourceTable : result.getSourceTableList()) {
                         if (sideTableMap.containsKey(sourceTable)) {
@@ -217,8 +219,8 @@ public class Main {
                     }
 
                     if (isSide) {
-                        //sql-dimensional table contains the dimension table of execution
-                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerTableCache);
+                        //sql-dimensional table contains the dimension table of execution  sql维度表包含执行的维度表
+                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerSourceTableCache);
                     } else {
                         tableEnv.sqlUpdate(result.getExecSql());
                         if (LOG.isInfoEnabled()) {
