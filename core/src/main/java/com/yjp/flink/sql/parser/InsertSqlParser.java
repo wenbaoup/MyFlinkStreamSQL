@@ -55,8 +55,10 @@ public class InsertSqlParser implements IParser {
     public void parseSql(String sql, SqlTree sqlTree) {
         SqlParser.Config config = SqlParser
                 .configBuilder()
-                .setLex(Lex.MYSQL)
+                //从mysql改为MYSQL_ANSI
+                .setLex(Lex.MYSQL_ANSI)
                 .build();
+
         //以mysql的模式解析
         SqlParser sqlParser = SqlParser.create(sql, config);
         SqlNode sqlNode = null;

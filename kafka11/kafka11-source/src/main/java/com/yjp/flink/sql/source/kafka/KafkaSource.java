@@ -10,7 +10,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition;
@@ -67,15 +66,15 @@ public class KafkaSource implements IStreamSourceGener<Table> {
             types[i] = TypeInformation.of(kafka011SourceTableInfo.getFieldClasses()[i]);
         }
 
-        RowTypeInfo rowTypeInfo = new RowTypeInfo(types, kafka011SourceTableInfo.getFields());
+        TypeInformation<Row> typeInformation = new RowTypeInfo(types, kafka011SourceTableInfo.getFields());
 
         FlinkKafkaConsumer011<Row> kafkaSrc;
         if (BooleanUtils.isTrue(kafka011SourceTableInfo.getTopicIsPattern())) {
             kafkaSrc = new CustomerKafka011Consumer(Pattern.compile(topicName),
-                    new CustomerJsonDeserialization(rowTypeInfo, kafka011SourceTableInfo.getPhysicalFields()), props);
+                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields()), props);
         } else {
             kafkaSrc = new CustomerKafka011Consumer(topicName,
-                    new CustomerJsonDeserialization(rowTypeInfo, kafka011SourceTableInfo.getPhysicalFields()), props);
+                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields()), props);
         }
 
 
@@ -101,7 +100,6 @@ public class KafkaSource implements IStreamSourceGener<Table> {
 
         String fields = StringUtils.join(kafka011SourceTableInfo.getFields(), ",");
         String sourceOperatorName = SOURCE_OPERATOR_NAME_TPL.replace("${topic}", topicName).replace("${table}", sourceTableInfo.getName());
-        DataStreamSource<Row> kafkaSource = env.addSource(kafkaSrc, sourceOperatorName, rowTypeInfo);
-        return tableEnv.fromDataStream(kafkaSource.returns(rowTypeInfo), fields);
+        return tableEnv.fromDataStream(env.addSource(kafkaSrc, sourceOperatorName, typeInformation), fields);
     }
 }

@@ -126,8 +126,4 @@ public class MyLocalStreamEnvironment extends StreamExecutionEnvironment {
         }
     }
 
-    @Override
-    public JobExecutionResult execute(StreamGraph streamGraph) throws Exception {
-        return null;
-    }
 }

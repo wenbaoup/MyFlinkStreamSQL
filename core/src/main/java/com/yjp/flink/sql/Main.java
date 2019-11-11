@@ -30,6 +30,8 @@ import com.yjp.flink.sql.source.StreamSourceFactory;
 import com.yjp.flink.sql.table.SourceTableInfo;
 import com.yjp.flink.sql.table.TableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
+import com.yjp.flink.sql.udf.DateFormatUDF;
+import com.yjp.flink.sql.udf.DateToLongUDF;
 import com.yjp.flink.sql.util.FlinkUtil;
 import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
@@ -59,8 +61,8 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamContextEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.StreamQueryConfig;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
@@ -124,6 +126,8 @@ public class Main {
 
 
         options.addOption("tableConfProp", true, "flink table ref prop,eg specify Idle State Retention Time");
+        options.addOption("fieldDefaultValue", true, "flink table ref prop,eg specify Idle State Retention Time");
+
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cl = parser.parse(options, args);
@@ -135,6 +139,7 @@ public class Main {
         String deployMode = cl.getOptionValue("mode");
         String confProp = cl.getOptionValue("confProp");
         String tableConfProp = cl.getOptionValue("tableConfProp");
+        String fieldDefaultValue = cl.getOptionValue("fieldDefaultValue");
 
         Preconditions.checkNotNull(sql, "parameters of sql is required");
         Preconditions.checkNotNull(name, "parameters of name is required");
@@ -165,9 +170,9 @@ public class Main {
             tableConfProp = URLDecoder.decode(tableConfProp, Charsets.UTF_8.toString());
             Properties tableConfProperties = PluginUtil.jsonStrToObject(tableConfProp, Properties.class);
             //配置状态过期时间
-            TableConfig tableConfig = tableEnv.getConfig();
+            StreamQueryConfig qConfig = tableEnv.queryConfig();
             //这里暂时只设置过期时间 后期需要修改本方法
-            setTableConfig(tableConfig, tableConfProperties);
+            setTableConfig(qConfig, tableConfProperties);
         }
 
         List<URL> jarURList = Lists.newArrayList();
@@ -185,6 +190,9 @@ public class Main {
 
         //register udf
         registerUDF(sqlTree, jarURList, parentClassloader, tableEnv);
+        tableEnv.registerFunction("date_convert", new DateFormatUDF());
+        tableEnv.registerFunction("dateToLong", new DateToLongUDF());
+
         //register table schema
         registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerSourceTableCache);
 
@@ -219,8 +227,14 @@ public class Main {
                     }
 
                     if (isSide) {
+                        Properties fieldDefaultValueProperties = null;
+                        //如果查询字段为null 赋默认值
+                        if (fieldDefaultValue != null) {
+                            fieldDefaultValue = URLDecoder.decode(fieldDefaultValue, Charsets.UTF_8.toString());
+                            fieldDefaultValueProperties = PluginUtil.jsonStrToObject(fieldDefaultValue, Properties.class);
+                        }
                         //sql-dimensional table contains the dimension table of execution  sql维度表包含执行的维度表
-                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerSourceTableCache);
+                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerSourceTableCache, fieldDefaultValueProperties);
                     } else {
                         tableEnv.sqlUpdate(result.getExecSql());
                         if (LOG.isInfoEnabled()) {
@@ -236,12 +250,12 @@ public class Main {
             urlList.addAll(Arrays.asList(parentClassloader.getURLs()));
             ((MyLocalStreamEnvironment) env).setClasspaths(urlList);
         }
-
         env.execute(name);
+        System.out.println("main 方法结束");
     }
 
-    private static void setTableConfig(TableConfig tableConfig, Properties tableConfProperties) {
-        tableConfig.setIdleStateRetentionTime(
+    private static void setTableConfig(StreamQueryConfig qConfig, Properties tableConfProperties) {
+        qConfig.withIdleStateRetentionTime(
                 Time.hours(Long.parseLong(tableConfProperties.getProperty("table.conf.idlestateretentiontime.min"))),
                 Time.hours(Long.parseLong(tableConfProperties.getProperty("table.conf.idlestateretentiontime.max"))));
     }

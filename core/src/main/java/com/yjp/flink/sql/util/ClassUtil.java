@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.util;
 
@@ -29,6 +28,7 @@ import java.sql.Timestamp;
  * Reason: TODO ADD REASON(可选)
  * Date: 2017年03月10日 下午1:16:37
  * Company: www.dtstack.com
+ *
  * @author sishu.yss
  */
 public class ClassUtil {
@@ -86,10 +86,9 @@ public class ClassUtil {
             case "decimal":
             case "decimalunsigned":
                 return BigDecimal.class;
-
+            default:
+                throw new RuntimeException("不支持 " + str + " 类型");
         }
-
-        throw new RuntimeException("不支持 " + str + " 类型");
     }
 
     public static Object convertType(Object field, String fromType, String toType) {
@@ -97,7 +96,7 @@ public class ClassUtil {
         toType = toType.toUpperCase();
         String rowData = field.toString();
 
-        switch(toType) {
+        switch (toType) {
             case "TINYINT":
                 return Byte.valueOf(rowData);
             case "SMALLINT":
@@ -127,34 +126,25 @@ public class ClassUtil {
 
     public static String getTypeFromClass(Class<?> clz) {
 
-        if(clz == Byte.class){
+        if (clz == Byte.class) {
             return "TINYINT";
-        }
-        else if(clz == Short.class){
+        } else if (clz == Short.class) {
             return "SMALLINT";
-        }
-        else if(clz == Integer.class){
+        } else if (clz == Integer.class) {
             return "INT";
-        }
-        else if(clz == Long.class){
+        } else if (clz == Long.class) {
             return "BIGINT";
-        }
-        else if(clz == String.class){
+        } else if (clz == String.class) {
             return "STRING";
-        }
-        else if(clz == Float.class){
+        } else if (clz == Float.class) {
             return "FLOAT";
-        }
-        else if(clz == Double.class){
+        } else if (clz == Double.class) {
             return "DOUBLE";
-        }
-        else if(clz == Date.class){
+        } else if (clz == Date.class) {
             return "DATE";
-        }
-        else if(clz == Timestamp.class){
+        } else if (clz == Timestamp.class) {
             return "TIMESTAMP";
-        }
-        else if(clz == Boolean.class){
+        } else if (clz == Boolean.class) {
             return "BOOLEAN";
         }
         throw new IllegalArgumentException("Unsupported data type: " + clz.getName());
@@ -163,34 +153,25 @@ public class ClassUtil {
 
     public static String getTypeFromClassName(String clzName) {
 
-        if(clzName.equals(Byte.class.getName())){
+        if (clzName.equals(Byte.class.getName())) {
             return "TINYINT";
-        }
-        else if(clzName.equals(Short.class.getName())){
+        } else if (clzName.equals(Short.class.getName())) {
             return "SMALLINT";
-        }
-        else if(clzName.equals(Integer.class.getName())){
+        } else if (clzName.equals(Integer.class.getName())) {
             return "INT";
-        }
-        else if(clzName.equals(Long.class.getName())){
+        } else if (clzName.equals(Long.class.getName())) {
             return "BIGINT";
-        }
-        else if(clzName.equals(String.class.getName())){
+        } else if (clzName.equals(String.class.getName())) {
             return "STRING";
-        }
-        else if(clzName.equals(Float.class.getName())){
+        } else if (clzName.equals(Float.class.getName())) {
             return "FLOAT";
-        }
-        else if(clzName.equals(Double.class.getName())){
+        } else if (clzName.equals(Double.class.getName())) {
             return "DOUBLE";
-        }
-        else if(clzName.equals(Date.class.getName())){
+        } else if (clzName.equals(Date.class.getName())) {
             return "DATE";
-        }
-        else if(clzName.equals(Timestamp.class.getName())){
+        } else if (clzName.equals(Timestamp.class.getName())) {
             return "TIMESTAMP";
-        }
-        else if(clzName.equals(Boolean.class.getName())){
+        } else if (clzName.equals(Boolean.class.getName())) {
             return "BOOLEAN";
         }
         throw new IllegalArgumentException("Unsupported data type: " + clzName);

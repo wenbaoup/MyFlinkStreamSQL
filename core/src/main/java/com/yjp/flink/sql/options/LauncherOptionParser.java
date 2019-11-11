@@ -71,6 +71,9 @@ public class LauncherOptionParser {
 
     public static final String OPTION_TABLE_CONF_PROP = "tableConfProp";
 
+    public static final String FIELD_DEFAULT_VALUE = "fieldDefaultValue";
+
+
     private Options options = new Options();
 
     private CommandLineParser parser = new DefaultParser();
@@ -93,6 +96,9 @@ public class LauncherOptionParser {
         options.addOption(OPTION_FLINK_JAR_PATH, true, "flink jar path for submit of perjob mode");
 
         options.addOption(OPTION_TABLE_CONF_PROP, true, "flink table ref prop,eg specify Idle State Retention Time");
+
+        options.addOption(FIELD_DEFAULT_VALUE, true, "Query field null default assignment ,eg specify (id.isNull).?(0,id) as id ");
+
         //参数解析
         CommandLine cl = parser.parse(options, args);
         String mode = cl.getOptionValue(OPTION_MODE, ClusterMode.local.name());
@@ -158,6 +164,12 @@ public class LauncherOptionParser {
         if (StringUtils.isNotBlank(tableConfProp)) {
             properties.setTableConfProp(tableConfProp);
         }
+
+        String fieldDefaultValue = cl.getOptionValue(FIELD_DEFAULT_VALUE);
+        if (StringUtils.isNotBlank(fieldDefaultValue)) {
+            properties.setFieldDefaultValue(fieldDefaultValue);
+        }
+
     }
 
     public LauncherOptions getLauncherOptions() {

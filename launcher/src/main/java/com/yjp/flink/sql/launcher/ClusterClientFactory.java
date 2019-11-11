@@ -124,7 +124,6 @@ public class ClusterClientFactory {
                         maxCores = thisCores;
                         applicationId = report.getApplicationId();
                     }
-
                 }
 
                 assert applicationId != null;

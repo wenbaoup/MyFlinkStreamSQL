@@ -60,6 +60,8 @@ public class LauncherOptions {
 
     private String tableConfProp;
 
+    private String fieldDefaultValue;
+
 
     public String getMode() {
         return mode;
@@ -171,5 +173,13 @@ public class LauncherOptions {
 
     public void setTableConfProp(String tableConfProp) {
         this.tableConfProp = tableConfProp;
+    }
+
+    public String getFieldDefaultValue() {
+        return fieldDefaultValue;
+    }
+
+    public void setFieldDefaultValue(String fieldDefaultValue) {
+        this.fieldDefaultValue = fieldDefaultValue;
     }
 }

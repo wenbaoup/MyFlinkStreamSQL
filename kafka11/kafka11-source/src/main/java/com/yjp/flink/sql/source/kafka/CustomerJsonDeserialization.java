@@ -125,9 +125,8 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
             }
 
             numInRecord.inc();
-            if (message != null) {
-                numInBytes.inc(message.length);
-            }
+            numInBytes.inc(message.length);
+
 
             parseTree(root, null);
             Row row = new Row(fieldNames.length);
@@ -156,10 +155,12 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
 
             numInResolveRecord.inc();
             return row;
-        } catch (Throwable t) {
+        } catch (Exception e) {
             //add metric of dirty data
             if (dirtyDataCounter.getCount() % rowLenth == 0) {
+                assert message != null;
                 LOG.info("dirtyData: " + new String(message));
+                LOG.error("", e);
             }
             dirtyDataCounter.inc();
             return null;
