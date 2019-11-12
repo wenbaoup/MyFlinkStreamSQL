@@ -18,7 +18,7 @@
 
 package com.yjp.flink.sql.launcher.perjob;
 
-import com.yjp.flink.sql.options.LauncherOptions;
+import com.yjp.flink.sql.options.Options;
 import com.yjp.flink.sql.util.PluginUtil;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;
@@ -39,7 +39,6 @@ import java.net.URLDecoder;
 import java.util.*;
 
 /**
- *
  * per job mode submitter
  * Date: 2018/11/17
  * Company: www.yjp.com
@@ -51,7 +50,7 @@ public class PerJobSubmitter {
 
     private static final Logger LOG = LoggerFactory.getLogger(PerJobSubmitter.class);
 
-    public static String submit(LauncherOptions launcherOptions, JobGraph jobGraph) throws Exception {
+    public static String submit(Options launcherOptions, JobGraph jobGraph) throws Exception {
 
         fillJobGraphClassPath(jobGraph);
         if (!StringUtils.isBlank(launcherOptions.getAddjar())) {

@@ -1,4 +1,3 @@
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,19 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.yjp.flink.sql.options;
 
-package com.yjp.flink.sql;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Created by sishu.yss on 2018/10/10.
+ * 
+ * Reason: TODO ADD REASON(可选)
+ * Date: 2019年9月16日 下午1:24:39
+ * Company: www.dtstack.com
+ * @author sishu.yss
+ *
  */
-public enum ClusterMode {
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface OptionRequired {
 
-    local(0),standalone(1),yarn(2),yarnPer(3);
+	boolean required() default false;
 
-    private int type;
+	boolean hasArg() default true;
 
-    ClusterMode(int type){
-        this.type = type;
-    }
+	String description() default "";
 }

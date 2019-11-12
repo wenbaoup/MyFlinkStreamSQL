@@ -20,8 +20,11 @@
 package com.yjp.flink.sql;
 
 import com.yjp.flink.sql.classloader.YjpClassLoader;
+import com.yjp.flink.sql.enums.ClusterMode;
 import com.yjp.flink.sql.enums.ECacheType;
 import com.yjp.flink.sql.environment.MyLocalStreamEnvironment;
+import com.yjp.flink.sql.options.OptionParser;
+import com.yjp.flink.sql.options.Options;
 import com.yjp.flink.sql.parser.*;
 import com.yjp.flink.sql.side.SideSqlExec;
 import com.yjp.flink.sql.side.SideTableInfo;
@@ -39,10 +42,6 @@ import com.yjp.flink.sql.watermarker.WaterMarkerAssigner;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
 import org.apache.commons.io.Charsets;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
@@ -50,7 +49,6 @@ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.calcite.shaded.com.google.common.base.Preconditions;
 import org.apache.flink.calcite.shaded.com.google.common.base.Strings;
 import org.apache.flink.calcite.shaded.com.google.common.collect.Lists;
 import org.apache.flink.calcite.shaded.com.google.common.collect.Maps;
@@ -112,38 +110,18 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        Options options = new Options();
-        options.addOption("sql", true, "sql config");
-        options.addOption("name", true, "job name");
-        options.addOption("addjar", true, "add jar");
-        options.addOption("localSqlPluginPath", true, "local sql plugin path");
-        options.addOption("remoteSqlPluginPath", true, "remote sql plugin path");
-        options.addOption("confProp", true, "env properties");
-        options.addOption("mode", true, "deploy mode");
+        OptionParser optionParser = new OptionParser(args);
+        Options options = optionParser.getOptions();
+        String sql = options.getSql();
+        String name = options.getName();
+        String addJarListStr = options.getAddjar();
+        String localSqlPluginPath = options.getLocalSqlPluginPath();
+        String remoteSqlPluginPath = options.getRemoteSqlPluginPath();
+        String deployMode = options.getMode();
+        String confProp = options.getConfProp();
+        String tableConfProp = options.getTableConfProp();
+        String fieldDefaultValue = options.getFieldDefaultValue();
 
-        options.addOption("savePointPath", true, "Savepoint restore path");
-        options.addOption("allowNonRestoredState", true, "Flag indicating whether non restored state is allowed if the savepoint");
-
-
-        options.addOption("tableConfProp", true, "flink table ref prop,eg specify Idle State Retention Time");
-        options.addOption("fieldDefaultValue", true, "flink table ref prop,eg specify Idle State Retention Time");
-
-
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cl = parser.parse(options, args);
-        String sql = cl.getOptionValue("sql");
-        String name = cl.getOptionValue("name");
-        String addJarListStr = cl.getOptionValue("addjar");
-        String localSqlPluginPath = cl.getOptionValue("localSqlPluginPath");
-        String remoteSqlPluginPath = cl.getOptionValue("remoteSqlPluginPath");
-        String deployMode = cl.getOptionValue("mode");
-        String confProp = cl.getOptionValue("confProp");
-        String tableConfProp = cl.getOptionValue("tableConfProp");
-        String fieldDefaultValue = cl.getOptionValue("fieldDefaultValue");
-
-        Preconditions.checkNotNull(sql, "parameters of sql is required");
-        Preconditions.checkNotNull(name, "parameters of name is required");
-        Preconditions.checkNotNull(localSqlPluginPath, "parameters of localSqlPluginPath is required");
         //解码之前编码的sql
         sql = URLDecoder.decode(sql, Charsets.UTF_8.name());
         SqlParser.setLocalSqlPluginRoot(localSqlPluginPath);
@@ -246,8 +224,7 @@ public class Main {
         }
 
         if (env instanceof MyLocalStreamEnvironment) {
-            List<URL> urlList = new ArrayList<>();
-            urlList.addAll(Arrays.asList(parentClassloader.getURLs()));
+            List<URL> urlList = new ArrayList<>(Arrays.asList(parentClassloader.getURLs()));
             ((MyLocalStreamEnvironment) env).setClasspaths(urlList);
         }
         env.execute(name);

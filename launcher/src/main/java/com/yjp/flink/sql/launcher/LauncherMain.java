@@ -21,11 +21,11 @@ package com.yjp.flink.sql.launcher;
 
 import avro.shaded.com.google.common.collect.Lists;
 import com.alibaba.fastjson.JSON;
-import com.yjp.flink.sql.ClusterMode;
 import com.yjp.flink.sql.Main;
+import com.yjp.flink.sql.enums.ClusterMode;
 import com.yjp.flink.sql.launcher.perjob.PerJobSubmitter;
-import com.yjp.flink.sql.options.LauncherOptionParser;
-import com.yjp.flink.sql.options.LauncherOptions;
+import com.yjp.flink.sql.options.OptionParser;
+import com.yjp.flink.sql.options.Options;
 import com.yjp.flink.sql.util.PluginUtil;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -66,21 +66,21 @@ public class LauncherMain {
             args = parseJson(args);
         }
         //解析参数 转换为LauncherOptions对象 POJO
-        LauncherOptionParser optionParser = new LauncherOptionParser(args);
-        LauncherOptions launcherOptions = optionParser.getLauncherOptions();
+        OptionParser optionParser = new OptionParser(args);
+        Options launcherOptions = optionParser.getOptions();
         String mode = launcherOptions.getMode();
         //将flinkconf，yarnconf，flinkJarPath抛弃  其他的装入List  key前面多-
         List<String> argList = optionParser.getProgramExeArgList();
 
         if (mode.equals(ClusterMode.local.name())) {
-            String[] localArgs = argList.toArray(new String[argList.size()]);
+            String[] localArgs = argList.toArray(new String[0]);
             Main.main(localArgs);
             return;
         }
 
         String pluginRoot = launcherOptions.getLocalSqlPluginPath();
         File jarFile = new File(getLocalCoreJarPath(pluginRoot));
-        String[] remoteArgs = argList.toArray(new String[argList.size()]);
+        String[] remoteArgs = argList.toArray(new String[0]);
         //最终还是调用com.yjp.flink.sql.Main
         PackagedProgram program = new PackagedProgram(jarFile, Lists.newArrayList(), remoteArgs);
 

@@ -87,17 +87,27 @@ public class FlinkSQLExec {
 
     private static String transQueryField(String[] fieldNames, Properties fieldDefaultValueProperties) {
         StringBuilder buffer = new StringBuilder();
-        for (String fieldName : fieldNames) {
-            if ("tablename".equalsIgnoreCase(fieldName)) {
-                continue;
+        if (null != fieldDefaultValueProperties) {
+            for (String fieldName : fieldNames) {
+                if ("tablename".equalsIgnoreCase(fieldName)) {
+                    continue;
+                }
+                String value = fieldDefaultValueProperties.getProperty(fieldName);
+                if (null != value) {
+                    buffer.append("(").append(fieldName).append(".isNull).?(").append(value).append(",").append(fieldName).append(") as ").append(fieldName).append(",");
+                } else {
+                    buffer.append(fieldName).append(",");
+                }
             }
-            String value = fieldDefaultValueProperties.getProperty(fieldName);
-            if (null != value) {
-                buffer.append("(").append(fieldName).append(".isNull).?(").append(value).append(",").append(fieldName).append(") as ").append(fieldName).append(",");
-            } else {
+        } else {
+            for (String fieldName : fieldNames) {
+                if ("tablename".equalsIgnoreCase(fieldName)) {
+                    continue;
+                }
                 buffer.append(fieldName).append(",");
             }
         }
+
         buffer.append("tablename");
         return buffer.toString();
     }

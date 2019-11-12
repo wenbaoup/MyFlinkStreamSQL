@@ -18,7 +18,8 @@
 
 package com.yjp.flink.sql.options;
 
-import com.yjp.flink.sql.ClusterMode;
+
+import com.yjp.flink.sql.enums.ClusterMode;
 
 /**
  * This class define commandline options for the Launcher program
@@ -27,40 +28,55 @@ import com.yjp.flink.sql.ClusterMode;
  *
  * @author huyifan.zju@163.com
  */
-public class LauncherOptions {
+public class Options {
 
+    @OptionRequired(description = "Running mode")
     private String mode = ClusterMode.local.name();
 
+    @OptionRequired(required = true, description = "Job name")
     private String name;
 
+    @OptionRequired(required = true, description = "Job sql file")
     private String sql;
 
+    @OptionRequired(description = "Flink configuration directory")
     private String flinkconf;
 
+    @OptionRequired(description = "Yarn and Hadoop configuration directory")
     private String yarnconf;
 
+    @OptionRequired(required = true, description = "Sql local plugin root")
     private String localSqlPluginPath;
 
+    @OptionRequired(required = true, description = "Sql remote plugin root")
     private String remoteSqlPluginPath;
 
+    @OptionRequired(description = "sql ext jar,eg udf jar")
     private String addjar;
 
-    private String confProp;
+    @OptionRequired(description = "sql ref prop,eg specify event time")
+    private String confProp = "{}";
 
+    @OptionRequired(description = "Savepoint restore path")
     private String savePointPath;
 
+    @OptionRequired(description = "Flag indicating whether non restored state is allowed if the savepoint")
     private String allowNonRestoredState = "false";
 
-    /**
-     * just use for per_job mode
-     */
+    @OptionRequired(description = "flink jar path for submit of perjob mode")
     private String flinkJarPath;
 
-    private String queue;
+    @OptionRequired(description = "yarn queue")
+    private String queue = "default";
 
+    @OptionRequired(description = "flink table ref prop,eg specify Idle State Retention Time")
     private String tableConfProp;
 
+    @OptionRequired(description = "Query field null default assignment ,eg specify (id.isNull).?(0,id) as id ")
     private String fieldDefaultValue;
+
+    @OptionRequired(description = "yarn session configuration,such as yid")
+    private String yarnSessionConf = "{}";
 
 
     public String getMode() {
@@ -181,5 +197,13 @@ public class LauncherOptions {
 
     public void setFieldDefaultValue(String fieldDefaultValue) {
         this.fieldDefaultValue = fieldDefaultValue;
+    }
+
+    public String getYarnSessionConf() {
+        return yarnSessionConf;
+    }
+
+    public void setYarnSessionConf(String yarnSessionConf) {
+        this.yarnSessionConf = yarnSessionConf;
     }
 }

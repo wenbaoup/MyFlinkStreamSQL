@@ -22,7 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -67,10 +66,8 @@ public class YarnConfLoader {
     /**
      * deal yarn HA conf
      */
-    private static Configuration haYarnConf(Configuration yarnConf) {
-        Iterator<Map.Entry<String, String>> iterator = yarnConf.iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, String> entry = iterator.next();
+    public static Configuration haYarnConf(Configuration yarnConf) {
+        for (Map.Entry<String, String> entry : yarnConf) {
             String key = entry.getKey();
             String value = entry.getValue();
             if (key.startsWith("yarn.resourcemanager.hostname.")) {
