@@ -133,6 +133,6 @@ public class LauncherMain {
             list.add("-" + entry.getKey());
             list.add(entry.getValue().toString());
         }
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 }

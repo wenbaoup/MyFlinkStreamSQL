@@ -44,7 +44,7 @@ public class KafkaSourceParser extends AbsSourceParser {
 
     private static final String KAFKA_NEST_FIELD_KEY = "nestFieldKey";
 
-    private static Pattern kafkaNestFieldKeyPattern = Pattern.compile("(?i)((\\S+\\.)*\\S+)\\s+(\\w+)\\s+AS\\s+(\\w+)$");
+    private static Pattern kafkaNestFieldKeyPattern = Pattern.compile("(?i)((@*\\S+\\.)*\\S+)\\s+(\\w+)\\s+AS\\s+(\\w+)(\\s+NOT\\s+NULL)?$");
 
     static {
         keyPatternMap.put(KAFKA_NEST_FIELD_KEY, kafkaNestFieldKeyPattern);
@@ -63,11 +63,15 @@ public class KafkaSourceParser extends AbsSourceParser {
         String fieldType = matcher.group(3);
         String mappingField = matcher.group(4);
         Class fieldClass = ClassUtil.stringConvertClass(fieldType);
+        boolean notNull = matcher.group(5) != null;
+        TableInfo.FieldExtraInfo fieldExtraInfo = new TableInfo.FieldExtraInfo();
+        fieldExtraInfo.setNotNull(notNull);
 
         tableInfo.addPhysicalMappings(mappingField, physicalField);
         tableInfo.addField(mappingField);
         tableInfo.addFieldClass(fieldClass);
         tableInfo.addFieldType(fieldType);
+        tableInfo.addFieldExtraInfo(fieldExtraInfo);
         if (LOG.isInfoEnabled()) {
             LOG.info(physicalField + "--->" + mappingField + " Class: " + fieldClass.toString());
         }
@@ -83,7 +87,7 @@ public class KafkaSourceParser extends AbsSourceParser {
 
         kafka11SourceTableInfo.setParallelism(MathUtil.getIntegerVal(props.get(KafkaSourceTableInfo.PARALLELISM_KEY.toLowerCase())));
         String bootstrapServer = MathUtil.getString(props.get(KafkaSourceTableInfo.BOOTSTRAPSERVERS_KEY.toLowerCase()));
-        if (bootstrapServer == null || bootstrapServer.trim().equals("")) {
+        if (bootstrapServer == null || "".equals(bootstrapServer.trim())) {
             throw new Exception("BootstrapServers can not be empty!");
         } else {
             kafka11SourceTableInfo.setBootstrapServers(bootstrapServer);

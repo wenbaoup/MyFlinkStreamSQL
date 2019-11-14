@@ -61,6 +61,7 @@ public class ClassUtil {
             case "varchar":
             case "char":
             case "text":
+            case "String":
                 return String.class;
 
             case "real":

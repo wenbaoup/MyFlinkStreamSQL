@@ -35,6 +35,7 @@ import com.yjp.flink.sql.table.TableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
 import com.yjp.flink.sql.udf.DateFormatUDF;
 import com.yjp.flink.sql.udf.DateToLongUDF;
+import com.yjp.flink.sql.udf.IfNullUDF;
 import com.yjp.flink.sql.util.FlinkUtil;
 import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
@@ -89,19 +90,19 @@ public class Main {
 
     private static final String CLASS_FILE_NAME_FMT = "class_path_%d";
 
-    private static final ObjectMapper objMapper = new ObjectMapper();
+    private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-    private static final int failureRate = 3;
+    private static final int FAILURE_RATE = 3;
     /**
      * min
      */
-    private static final int failureInterval = 6;
+    private static final int FAILURE_INTERVAL = 6;
     /**
      * sec
      */
-    private static final int delayInterval = 10;
+    private static final int DELAY_INTERVAL = 10;
 
     private static org.apache.calcite.sql.parser.SqlParser.Config config = org.apache.calcite.sql.parser.SqlParser
             .configBuilder()
@@ -120,7 +121,6 @@ public class Main {
         String deployMode = options.getMode();
         String confProp = options.getConfProp();
         String tableConfProp = options.getTableConfProp();
-        String fieldDefaultValue = options.getFieldDefaultValue();
 
         //解码之前编码的sql
         sql = URLDecoder.decode(sql, Charsets.UTF_8.name());
@@ -129,7 +129,7 @@ public class Main {
         List<String> addJarFileList = Lists.newArrayList();
         if (!Strings.isNullOrEmpty(addJarListStr)) {
             addJarListStr = URLDecoder.decode(addJarListStr, Charsets.UTF_8.name());
-            addJarFileList = objMapper.readValue(addJarListStr, List.class);
+            addJarFileList = OBJ_MAPPER.readValue(addJarListStr, List.class);
         }
 
         ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
@@ -167,9 +167,10 @@ public class Main {
         Map<String, Table> registerSourceTableCache = Maps.newHashMap();
 
         //register udf
-        registerUDF(sqlTree, jarURList, parentClassloader, tableEnv);
+        registerUDF(sqlTree, jarURList, tableEnv);
         tableEnv.registerFunction("date_convert", new DateFormatUDF());
         tableEnv.registerFunction("dateToLong", new DateToLongUDF());
+        tableEnv.registerFunction("if_null", new IfNullUDF());
 
         //register table schema
         registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerSourceTableCache);
@@ -205,14 +206,8 @@ public class Main {
                     }
 
                     if (isSide) {
-                        Properties fieldDefaultValueProperties = null;
-                        //如果查询字段为null 赋默认值
-                        if (fieldDefaultValue != null) {
-                            fieldDefaultValue = URLDecoder.decode(fieldDefaultValue, Charsets.UTF_8.toString());
-                            fieldDefaultValueProperties = PluginUtil.jsonStrToObject(fieldDefaultValue, Properties.class);
-                        }
                         //sql-dimensional table contains the dimension table of execution  sql维度表包含执行的维度表
-                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerSourceTableCache, fieldDefaultValueProperties);
+                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerSourceTableCache);
                     } else {
                         tableEnv.sqlUpdate(result.getExecSql());
                         if (LOG.isInfoEnabled()) {
@@ -256,19 +251,19 @@ public class Main {
         }
     }
 
-    private static void registerUDF(SqlTree sqlTree, List<URL> jarURList, URLClassLoader parentClassloader,
-                                    StreamTableEnvironment tableEnv)
-            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    private static void registerUDF(SqlTree sqlTree, List<URL> jarURList, StreamTableEnvironment tableEnv)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         //register urf
+        // udf和tableEnv须由同一个类加载器加载
+        ClassLoader levelClassLoader = tableEnv.getClass().getClassLoader();
         URLClassLoader classLoader = null;
         List<CreateFuncParser.SqlParserResult> funcList = sqlTree.getFunctionList();
         for (CreateFuncParser.SqlParserResult funcInfo : funcList) {
             //classloader
             if (classLoader == null) {
-                classLoader = FlinkUtil.loadExtraJar(jarURList, parentClassloader);
+                classLoader = FlinkUtil.loadExtraJar(jarURList, (URLClassLoader) levelClassLoader);
             }
-            FlinkUtil.registerUDF(funcInfo.getType(), funcInfo.getClassName(), funcInfo.getName(),
-                    tableEnv, classLoader);
+            FlinkUtil.registerUDF(funcInfo.getType(), funcInfo.getClassName(), funcInfo.getName(), tableEnv, classLoader);
         }
     }
 
@@ -373,9 +368,9 @@ public class Main {
         }
         //配置重启策略
         env.setRestartStrategy(RestartStrategies.failureRateRestart(
-                failureRate,
-                Time.of(failureInterval, TimeUnit.MINUTES),
-                Time.of(delayInterval, TimeUnit.SECONDS)
+                FAILURE_RATE,
+                Time.of(FAILURE_INTERVAL, TimeUnit.MINUTES),
+                Time.of(DELAY_INTERVAL, TimeUnit.SECONDS)
         ));
         //设置时间策略  默认process time
         FlinkUtil.setStreamTimeCharacteristic(env, confProperties);

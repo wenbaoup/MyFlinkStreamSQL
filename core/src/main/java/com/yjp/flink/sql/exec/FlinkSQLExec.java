@@ -33,7 +33,6 @@ import org.apache.flink.table.plan.schema.TableSourceSinkTable;
 import scala.Option;
 
 import java.lang.reflect.Method;
-import java.util.Properties;
 
 /**
  * @description: mapping by name when insert into sink table
@@ -42,7 +41,7 @@ import java.util.Properties;
  */
 public class FlinkSQLExec {
 
-    public static void sqlUpdate(StreamTableEnvironment tableEnv, String stmt, Properties fieldDefaultValueProperties) throws Exception {
+    public static void sqlUpdate(StreamTableEnvironment tableEnv, String stmt) throws Exception {
 
         FlinkPlannerImpl planner = new FlinkPlannerImpl(tableEnv.getFrameworkConfig(), tableEnv.getPlanner(), tableEnv.getTypeFactory());
         SqlNode insert = planner.parse(stmt);
@@ -73,7 +72,7 @@ public class FlinkSQLExec {
         Table newTable;
         try {
             //查询sink中的字段
-            newTable = queryResult.select(transQueryField(fieldNames, fieldDefaultValueProperties));
+            newTable = queryResult.select(String.join(",", fieldNames));
         } catch (Exception e) {
             throw new RuntimeException(e);
 //            throw new ValidationException(
@@ -85,30 +84,4 @@ public class FlinkSQLExec {
         tableEnv.insertInto(newTable, targetTableName, tableEnv.queryConfig());
     }
 
-    private static String transQueryField(String[] fieldNames, Properties fieldDefaultValueProperties) {
-        StringBuilder buffer = new StringBuilder();
-        if (null != fieldDefaultValueProperties) {
-            for (String fieldName : fieldNames) {
-                if ("tablename".equalsIgnoreCase(fieldName)) {
-                    continue;
-                }
-                String value = fieldDefaultValueProperties.getProperty(fieldName);
-                if (null != value) {
-                    buffer.append("(").append(fieldName).append(".isNull).?(").append(value).append(",").append(fieldName).append(") as ").append(fieldName).append(",");
-                } else {
-                    buffer.append(fieldName).append(",");
-                }
-            }
-        } else {
-            for (String fieldName : fieldNames) {
-                if ("tablename".equalsIgnoreCase(fieldName)) {
-                    continue;
-                }
-                buffer.append(fieldName).append(",");
-            }
-        }
-
-        buffer.append("tablename");
-        return buffer.toString();
-    }
 }

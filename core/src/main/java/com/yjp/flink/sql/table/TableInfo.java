@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
+ 
 
 package com.yjp.flink.sql.table;
 
-import avro.shaded.com.google.common.collect.Maps;
-import org.apache.flink.calcite.shaded.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.io.Serializable;
 import java.util.List;
@@ -29,18 +30,13 @@ import java.util.Map;
 /**
  * Reason:
  * Date: 2018/6/22
- * Company: www.yjp.com
- *
+ * Company: www.dtstack.com
  * @author xuchao
  */
 
 public abstract class TableInfo implements Serializable {
 
     public static final String PARALLELISM_KEY = "parallelism";
-
-    public static final String FIELD_DELINITER = "fielddelimiter";
-
-    public static final String LENGTH_CHECK_POLICY = "lengthcheckpolicy";
 
     private String name;
 
@@ -54,22 +50,18 @@ public abstract class TableInfo implements Serializable {
 
     private final List<String> fieldList = Lists.newArrayList();
 
+    /**key:别名, value: realField */
+    private Map<String, String> physicalFields = Maps.newHashMap();
+
     private final List<String> fieldTypeList = Lists.newArrayList();
 
     private final List<Class> fieldClassList = Lists.newArrayList();
 
-    /**
-     * handling nested data structures
-     **/
-    private Map<String, String> physicalFields = Maps.newHashMap();
+    private final List<FieldExtraInfo> fieldExtraInfoList = Lists.newArrayList();
 
     private List<String> primaryKeys;
 
     private Integer parallelism = 1;
-
-    private String fieldDelimiter;
-
-    private String lengthCheckPolicy = "SKIP";
 
     public String[] getFieldTypes() {
         return fieldTypes;
@@ -77,9 +69,6 @@ public abstract class TableInfo implements Serializable {
 
     public abstract boolean check();
 
-    /**
-     * @return 返回传入with中的type
-     */
     public String getType() {
         return type;
     }
@@ -117,26 +106,30 @@ public abstract class TableInfo implements Serializable {
     }
 
     public void setParallelism(Integer parallelism) {
-        if (parallelism == null) {
+        if(parallelism == null){
             return;
         }
 
-        if (parallelism <= 0) {
+        if(parallelism <= 0){
             throw new RuntimeException("Abnormal parameter settings: parallelism > 0");
         }
 
         this.parallelism = parallelism;
     }
 
-    public void addField(String fieldName) {
+    public void addField(String fieldName){
         fieldList.add(fieldName);
     }
 
-    public void addFieldClass(Class fieldClass) {
+    public void addPhysicalMappings(String aliasName, String physicalFieldName){
+        physicalFields.put(aliasName, physicalFieldName);
+    }
+
+    public void addFieldClass(Class fieldClass){
         fieldClassList.add(fieldClass);
     }
 
-    public void addFieldType(String fieldType) {
+    public void addFieldType(String fieldType){
         fieldTypeList.add(fieldType);
     }
 
@@ -150,6 +143,10 @@ public abstract class TableInfo implements Serializable {
 
     public void setFieldClasses(Class<?>[] fieldClasses) {
         this.fieldClasses = fieldClasses;
+    }
+
+    public void addFieldExtraInfo(FieldExtraInfo extraInfo) {
+        fieldExtraInfoList.add(extraInfo);
     }
 
     public List<String> getFieldList() {
@@ -168,37 +165,38 @@ public abstract class TableInfo implements Serializable {
         return physicalFields;
     }
 
+    public List<FieldExtraInfo> getFieldExtraInfoList() {
+        return fieldExtraInfoList;
+    }
+
     public void setPhysicalFields(Map<String, String> physicalFields) {
         this.physicalFields = physicalFields;
     }
 
-    /**
-     * @param key   row field
-     * @param value physical field
-     */
-    public void addPhysicalMappings(String key, String value) {
-        physicalFields.put(key, value);
-    }
-
-    public String getFieldDelimiter() {
-        return fieldDelimiter;
-    }
-
-    public void setFieldDelimiter(String fieldDelimiter) {
-        this.fieldDelimiter = fieldDelimiter;
-    }
-
-    public String getLengthCheckPolicy() {
-        return lengthCheckPolicy;
-    }
-
-    public void setLengthCheckPolicy(String lengthCheckPolicy) {
-        this.lengthCheckPolicy = lengthCheckPolicy;
-    }
-
-    public void finish() {
+    public void finish(){
         this.fields = fieldList.toArray(new String[fieldList.size()]);
         this.fieldClasses = fieldClassList.toArray(new Class[fieldClassList.size()]);
         this.fieldTypes = fieldTypeList.toArray(new String[fieldTypeList.size()]);
+    }
+
+    /**
+     * field extra info，used to store `not null` `default 0`...，
+     *
+     * now, only support not null
+     */
+    public static class FieldExtraInfo implements Serializable {
+
+        /**
+         * default false：allow field is null
+         */
+        boolean notNull = false;
+
+        public boolean getNotNull() {
+            return notNull;
+        }
+
+        public void setNotNull(boolean notNull) {
+            this.notNull = notNull;
+        }
     }
 }

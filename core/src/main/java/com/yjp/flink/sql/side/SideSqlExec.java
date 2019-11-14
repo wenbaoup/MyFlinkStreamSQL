@@ -70,7 +70,7 @@ public class SideSqlExec {
     private Map<String, Table> localTableCache = Maps.newHashMap();
 
     public void exec(String sql, Map<String, SideTableInfo> sideTableMap, StreamTableEnvironment tableEnv,
-                     Map<String, Table> tableCache, Properties fieldDefaultValueProperties)
+                     Map<String, Table> tableCache)
             throws Exception {
 
         if (localSqlPluginPath == null) {
@@ -101,7 +101,7 @@ public class SideSqlExec {
                 }
 
                 if (pollSqlNode.getKind() == INSERT) {
-                    FlinkSQLExec.sqlUpdate(tableEnv, pollSqlNode.toString(), fieldDefaultValueProperties);
+                    FlinkSQLExec.sqlUpdate(tableEnv, pollSqlNode.toString());
                     if (LOG.isInfoEnabled()) {
                         LOG.info("exec sql: " + pollSqlNode.toString());
                     }
