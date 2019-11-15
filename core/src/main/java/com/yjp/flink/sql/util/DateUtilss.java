@@ -68,6 +68,10 @@ public class DateUtilss {
         return parseDateStringToDate(dateStr, "yyyy-MM-dd HH:mm:ss");
     }
 
+    public static Date changeStringToDate(String dateStr, String pattern) {
+        return parseDateStringToDate(dateStr, pattern);
+    }
+
     public static boolean compareDate(Date newDate, Date oldDate) {
         if (newDate == null && oldDate == null) {
             return false;

@@ -36,6 +36,7 @@ import com.yjp.flink.sql.table.TargetTableInfo;
 import com.yjp.flink.sql.udf.DateFormatUDF;
 import com.yjp.flink.sql.udf.DateToLongUDF;
 import com.yjp.flink.sql.udf.IfNullUDF;
+import com.yjp.flink.sql.udf.TimestampToLongUdf;
 import com.yjp.flink.sql.util.FlinkUtil;
 import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
@@ -171,6 +172,8 @@ public class Main {
         tableEnv.registerFunction("date_convert", new DateFormatUDF());
         tableEnv.registerFunction("dateToLong", new DateToLongUDF());
         tableEnv.registerFunction("if_null", new IfNullUDF());
+        tableEnv.registerFunction("TimestampToLong", new TimestampToLongUdf());
+
 
         //register table schema
         registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerSourceTableCache);

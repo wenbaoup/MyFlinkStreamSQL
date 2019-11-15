@@ -9,4 +9,8 @@ public class DateToLongUDF extends ScalarFunction {
     public Long eval(String date) {
         return DateUtilss.changeStringToDate(date).getTime();
     }
+
+    public Long eval(String date, String pattern) {
+        return DateUtilss.changeStringToDate(date, pattern).getTime();
+    }
 }

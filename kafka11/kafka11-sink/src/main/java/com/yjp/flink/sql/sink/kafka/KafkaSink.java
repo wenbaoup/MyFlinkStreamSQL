@@ -22,6 +22,7 @@ import com.yjp.flink.sql.sink.IStreamSinkGener;
 import com.yjp.flink.sql.sink.kafka.partition.TableNamePartitioner;
 import com.yjp.flink.sql.sink.kafka.table.KafkaSinkTableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -114,9 +115,19 @@ public class KafkaSink implements RetractStreamTableSink<Row>, IStreamSinkGener<
                 partitioner,
                 serializationSchema
         );
-        DataStream<Row> ds = dataStream.map((Tuple2<Boolean, Row> record) -> {
-            return record.f1;
-        }).returns(getOutputType().getTypeAt(1));
+        DataStream<Row> ds = dataStream.flatMap((FlatMapFunction<Tuple2<Boolean, Row>, Row>)
+                (booleanRowTuple2, collector) -> {
+                    if (booleanRowTuple2.f0) {
+                        collector.collect(booleanRowTuple2.f1);
+                    }
+                }).returns(getOutputType().getTypeAt(1));
+
+//        DataStream<Row> ds = dataStream.map((Tuple2<Boolean, Row> record) -> {
+//            if (record.f0) {
+//                return record.f1;
+//            }
+//        }).returns(getOutputType().getTypeAt(1));
+
 
         kafkaTableSink.emitDataStream(ds);
     }
