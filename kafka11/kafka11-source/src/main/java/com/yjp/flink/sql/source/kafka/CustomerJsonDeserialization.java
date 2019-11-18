@@ -173,7 +173,7 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
 
     public JsonNode getIgnoreCase(String key) {
         String nodeMappingKey = rowAndFieldMapping.getOrDefault(key, key);
-        return nodeAndJsonNodeMapping.get(nodeMappingKey);
+        return nodeAndJsonNodeMapping.get(nodeMappingKey.toLowerCase());
     }
 
     public void setFailOnMissingField(boolean failOnMissingField) {
@@ -189,10 +189,10 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
                 String nodeKey = getNodeKey(prefix, i);
 
                 if (child.isValueNode()) {
-                    nodeAndJsonNodeMapping.put(nodeKey, child);
+                    nodeAndJsonNodeMapping.put(nodeKey.toLowerCase(), child);
                 } else {
                     if (rowAndFieldMapping.containsValue(nodeKey)) {
-                        nodeAndJsonNodeMapping.put(nodeKey, child);
+                        nodeAndJsonNodeMapping.put(nodeKey.toLowerCase(), child);
                     }
                     parseTree(child, nodeKey);
                 }
@@ -207,10 +207,10 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
             String nodeKey = getNodeKey(prefix, next);
 
             if (child.isValueNode()) {
-                nodeAndJsonNodeMapping.put(nodeKey, child);
+                nodeAndJsonNodeMapping.put(nodeKey.toLowerCase(), child);
             } else {
                 if (rowAndFieldMapping.containsValue(nodeKey)) {
-                    nodeAndJsonNodeMapping.put(nodeKey, child);
+                    nodeAndJsonNodeMapping.put(nodeKey.toLowerCase(), child);
                 }
                 parseTree(child, nodeKey);
             }
