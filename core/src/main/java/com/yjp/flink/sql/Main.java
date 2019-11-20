@@ -33,10 +33,7 @@ import com.yjp.flink.sql.source.StreamSourceFactory;
 import com.yjp.flink.sql.table.SourceTableInfo;
 import com.yjp.flink.sql.table.TableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
-import com.yjp.flink.sql.udf.DateFormatUDF;
-import com.yjp.flink.sql.udf.DateToLongUDF;
-import com.yjp.flink.sql.udf.IfNullUDF;
-import com.yjp.flink.sql.udf.TimestampToLongUdf;
+import com.yjp.flink.sql.udf.*;
 import com.yjp.flink.sql.util.FlinkUtil;
 import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
@@ -173,6 +170,7 @@ public class Main {
         tableEnv.registerFunction("dateToLong", new DateToLongUDF());
         tableEnv.registerFunction("if_null", new IfNullUDF());
         tableEnv.registerFunction("TimestampToLong", new TimestampToLongUdf());
+        tableEnv.registerFunction("string_is_not_null", new StringIsNotNullUDF());
 
 
         //register table schema
