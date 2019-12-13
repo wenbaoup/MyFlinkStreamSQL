@@ -19,10 +19,12 @@
 
 package com.yjp.flink.sql;
 
-import com.yjp.flink.sql.classloader.YjpClassLoader;
+import com.yjp.flink.sql.classloader.ClassLoaderManager;
+import com.yjp.flink.sql.classloader.PluginUtil;
 import com.yjp.flink.sql.enums.ClusterMode;
 import com.yjp.flink.sql.enums.ECacheType;
 import com.yjp.flink.sql.environment.MyLocalStreamEnvironment;
+import com.yjp.flink.sql.exec.FlinkSQLExec;
 import com.yjp.flink.sql.options.OptionParser;
 import com.yjp.flink.sql.options.Options;
 import com.yjp.flink.sql.parser.*;
@@ -35,10 +37,8 @@ import com.yjp.flink.sql.table.TableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
 import com.yjp.flink.sql.udf.*;
 import com.yjp.flink.sql.util.FlinkUtil;
-import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
 import com.yjp.flink.sql.watermarker.WaterMarkerAssigner;
-import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.commons.io.Charsets;
@@ -61,6 +61,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.StreamQueryConfig;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.calcite.CalciteConfig;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
@@ -74,7 +75,10 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -102,11 +106,6 @@ public class Main {
      */
     private static final int DELAY_INTERVAL = 10;
 
-    private static org.apache.calcite.sql.parser.SqlParser.Config config = org.apache.calcite.sql.parser.SqlParser
-            .configBuilder()
-            .setLex(Lex.MYSQL)
-            .build();
-
     public static void main(String[] args) throws Exception {
 
         OptionParser optionParser = new OptionParser(args);
@@ -130,9 +129,9 @@ public class Main {
             addJarFileList = OBJ_MAPPER.readValue(addJarListStr, List.class);
         }
 
-        ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
-        YjpClassLoader parentClassloader = new YjpClassLoader(new URL[]{}, threadClassLoader);
-        Thread.currentThread().setContextClassLoader(parentClassloader);
+//        ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
+//        YjpClassLoader parentClassloader = new YjpClassLoader(new URL[]{}, threadClassLoader);
+//        Thread.currentThread().setContextClassLoader(parentClassloader);
 
         //StreamExecutionEnvironment 配置
         confProp = URLDecoder.decode(confProp, Charsets.UTF_8.toString());
@@ -162,7 +161,7 @@ public class Main {
         }
 
         Map<String, SideTableInfo> sideTableMap = Maps.newHashMap();
-        Map<String, Table> registerSourceTableCache = Maps.newHashMap();
+        Map<String, Table> registerTableCache = Maps.newHashMap();
 
         //register udf
         registerUDF(sqlTree, jarURList, tableEnv);
@@ -172,57 +171,24 @@ public class Main {
         tableEnv.registerFunction("TimestampToLong", new TimestampToLongUdf());
         tableEnv.registerFunction("string_is_not_null", new StringIsNotNullUDF());
 
-
         //register table schema
-        registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerSourceTableCache);
+        registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerTableCache);
+
+
+        sqlTranslation(localSqlPluginPath, tableEnv, sqlTree, sideTableMap, registerTableCache);
 
         SideSqlExec sideSqlExec = new SideSqlExec();
         sideSqlExec.setLocalSqlPluginPath(localSqlPluginPath);
 
         for (CreateTmpTableParser.SqlParserResult result : sqlTree.getTmpSqlList()) {
-            sideSqlExec.registerTmpTable(result, sideTableMap, tableEnv, registerSourceTableCache);
+            sideSqlExec.registerTmpTable(result, sideTableMap, tableEnv, registerTableCache);
         }
 
-        for (InsertSqlParser.SqlParseResult result : sqlTree.getExecSqlList()) {
-            if (LOG.isInfoEnabled()) {
-                LOG.info("exe-sql:\n" + result.getExecSql());
-            }
-
-            boolean isSide = false;
-
-            for (String tableName : result.getTargetTableList()) {
-                if (sqlTree.getTmpTableMap().containsKey(tableName)) {
-                    CreateTmpTableParser.SqlParserResult tmp = sqlTree.getTmpTableMap().get(tableName);
-                    String realSql = YjpStringUtil.replaceIgnoreQuota(result.getExecSql(), "`", "");
-                    SqlNode sqlNode = org.apache.calcite.sql.parser.SqlParser.create(realSql, config).parseStmt();
-                    String tmpSql = ((SqlInsert) sqlNode).getSource().toString();
-                    tmp.setExecSql(tmpSql);
-                    sideSqlExec.registerTmpTable(tmp, sideTableMap, tableEnv, registerSourceTableCache);
-                } else {
-                    for (String sourceTable : result.getSourceTableList()) {
-                        if (sideTableMap.containsKey(sourceTable)) {
-                            isSide = true;
-                            break;
-                        }
-                    }
-
-                    if (isSide) {
-                        //sql-dimensional table contains the dimension table of execution  sql维度表包含执行的维度表
-                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerSourceTableCache);
-                    } else {
-                        tableEnv.sqlUpdate(result.getExecSql());
-                        if (LOG.isInfoEnabled()) {
-                            LOG.info("exec sql: " + result.getExecSql());
-                        }
-                    }
-                }
-            }
-        }
 
         if (env instanceof MyLocalStreamEnvironment) {
-            List<URL> urlList = new ArrayList<>(Arrays.asList(parentClassloader.getURLs()));
-            ((MyLocalStreamEnvironment) env).setClasspaths(urlList);
+            ((MyLocalStreamEnvironment) env).setClasspaths(ClassLoaderManager.getClassPath());
         }
+
         env.execute(name);
         System.out.println("main 方法结束");
     }
@@ -231,6 +197,51 @@ public class Main {
         qConfig.withIdleStateRetentionTime(
                 Time.hours(Long.parseLong(tableConfProperties.getProperty("table.conf.idlestateretentiontime.min"))),
                 Time.hours(Long.parseLong(tableConfProperties.getProperty("table.conf.idlestateretentiontime.max"))));
+    }
+
+
+    private static void sqlTranslation(String localSqlPluginPath, StreamTableEnvironment tableEnv, SqlTree sqlTree, Map<String, SideTableInfo> sideTableMap, Map<String, Table> registerTableCache) throws Exception {
+        SideSqlExec sideSqlExec = new SideSqlExec();
+        sideSqlExec.setLocalSqlPluginPath(localSqlPluginPath);
+        for (CreateTmpTableParser.SqlParserResult result : sqlTree.getTmpSqlList()) {
+            sideSqlExec.registerTmpTable(result, sideTableMap, tableEnv, registerTableCache);
+        }
+
+        for (InsertSqlParser.SqlParseResult result : sqlTree.getExecSqlList()) {
+            if (LOG.isInfoEnabled()) {
+                LOG.info("exe-sql:\n" + result.getExecSql());
+            }
+            boolean isSide = false;
+            for (String tableName : result.getTargetTableList()) {
+                if (sqlTree.getTmpTableMap().containsKey(tableName)) {
+                    CreateTmpTableParser.SqlParserResult tmp = sqlTree.getTmpTableMap().get(tableName);
+                    String realSql = YjpStringUtil.replaceIgnoreQuota(result.getExecSql(), "`", "");
+
+                    SqlNode sqlNode = org.apache.calcite.sql.parser.SqlParser.create(realSql, CalciteConfig.MYSQL_LEX_CONFIG).parseStmt();
+                    String tmpSql = ((SqlInsert) sqlNode).getSource().toString();
+                    tmp.setExecSql(tmpSql);
+                    sideSqlExec.registerTmpTable(tmp, sideTableMap, tableEnv, registerTableCache);
+                } else {
+                    for (String sourceTable : result.getSourceTableList()) {
+                        if (sideTableMap.containsKey(sourceTable)) {
+                            isSide = true;
+                            break;
+                        }
+                    }
+                    if (isSide) {
+                        //sql-dimensional table contains the dimension table of execution
+                        sideSqlExec.exec(result.getExecSql(), sideTableMap, tableEnv, registerTableCache);
+                    } else {
+                        FlinkSQLExec.sqlUpdate(tableEnv, result.getExecSql());
+                        if (LOG.isInfoEnabled()) {
+                            LOG.info("exec sql: " + result.getExecSql());
+                        }
+                    }
+                }
+            }
+        }
+
+
     }
 
     /**

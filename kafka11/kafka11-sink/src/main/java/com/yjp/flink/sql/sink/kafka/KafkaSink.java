@@ -80,6 +80,8 @@ public class KafkaSink implements RetractStreamTableSink<Row>, IStreamSinkGener<
 
         properties = new Properties();
         properties.setProperty("bootstrap.servers", kafka11SinkTableInfo.getBootstrapServers());
+        //设置了重试次数 为了保证数据有序 设置为1
+        properties.setProperty("max.in.flight.requests.per.connection", "1");
 
         for (String key : kafka11SinkTableInfo.getKafkaParamKeys()) {
             properties.setProperty(key, kafka11SinkTableInfo.getKafkaParam(key));

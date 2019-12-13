@@ -127,14 +127,25 @@ public class KuduAsyncReqRow extends AsyncReqRow {
         JsonArray inputParams = new JsonArray();
         Schema schema = table.getSchema();
 
-        for (Integer conValIndex : sideInfo.getEqualValIndex()) {
-            Object equalObj = input.getField(conValIndex);
+//        for (Integer conValIndex : sideInfo.getEqualValIndex()) {
+//            Object equalObj = input.getField(conValIndex);
+//            if (equalObj == null) {
+//                resultFuture.complete(null);
+//                return;
+//            }
+//            //增加过滤条件
+//            scannerBuilder.addPredicate(KuduPredicate.newInListPredicate(schema.getColumn(sideInfo.getEqualFieldList().get(0)), Collections.singletonList(equalObj)));
+//            inputParams.add(equalObj);
+//        }
+
+        for (int i = 0; i < sideInfo.getEqualValIndex().size(); i++) {
+            Object equalObj = input.getField(sideInfo.getEqualValIndex().get(i));
             if (equalObj == null) {
-                resultFuture.complete(null);
+//                resultFuture.complete(null);
                 return;
             }
             //增加过滤条件
-            scannerBuilder.addPredicate(KuduPredicate.newInListPredicate(schema.getColumn(sideInfo.getEqualFieldList().get(conValIndex)), Collections.singletonList(equalObj)));
+            scannerBuilder.addPredicate(KuduPredicate.newInListPredicate(schema.getColumn(sideInfo.getEqualFieldList().get(i)), Collections.singletonList(equalObj)));
             inputParams.add(equalObj);
         }
 

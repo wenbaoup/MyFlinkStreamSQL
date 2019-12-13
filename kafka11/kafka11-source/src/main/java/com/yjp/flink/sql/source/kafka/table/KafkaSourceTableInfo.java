@@ -45,6 +45,9 @@ public class KafkaSourceTableInfo extends SourceTableInfo {
 
     public static final String TOPICISPATTERN_KEY = "topicIsPattern";
 
+
+    public static final String NEED_TABLE_NAME = "needTableName";
+
     private String bootstrapServers;
 
     private String topic;
@@ -53,13 +56,16 @@ public class KafkaSourceTableInfo extends SourceTableInfo {
 
     private Boolean topicIsPattern = false;
 
+    private String needTableName;
+
     public Boolean getTopicIsPattern() {
         return topicIsPattern;
     }
 
     public void setTopicIsPattern(Boolean topicIsPattern) {
-        if (topicIsPattern == null) return;
-
+        if (topicIsPattern == null) {
+            return;
+        }
         this.topicIsPattern = topicIsPattern;
     }
 
@@ -117,12 +123,21 @@ public class KafkaSourceTableInfo extends SourceTableInfo {
         this.offset = offset;
     }
 
+    public String getNeedTableName() {
+        return needTableName;
+    }
+
+    public void setNeedTableName(String needTableName) {
+        this.needTableName = needTableName;
+    }
+
     @Override
     public boolean check() {
         Preconditions.checkNotNull(bootstrapServers, "kafka of bootstrapServers is required");
         Preconditions.checkNotNull(topic, "kafka of topic is required");
         return false;
     }
+
 
     @Override
     public String getType() {

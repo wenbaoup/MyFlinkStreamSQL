@@ -20,8 +20,10 @@
 package com.yjp.flink.sql.source.kafka;
 
 
+import com.alibaba.fastjson.JSONObject;
 import com.yjp.flink.sql.source.AbsDeserialization;
 import com.yjp.flink.sql.source.kafka.metric.KafkaTopicPartitionLagMetric;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.calcite.shaded.com.google.common.base.Strings;
@@ -93,8 +95,10 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
 
     private Map<String, String> rowAndFieldMapping;
 
+    private String needTableName;
 
-    public CustomerJsonDeserialization(TypeInformation<Row> typeInfo, Map<String, String> rowAndFieldMapping) {
+
+    public CustomerJsonDeserialization(TypeInformation<Row> typeInfo, Map<String, String> rowAndFieldMapping, String needTableName) {
         this.typeInfo = typeInfo;
 
         this.fieldNames = ((RowTypeInfo) typeInfo).getFieldNames();
@@ -102,10 +106,18 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
         this.fieldTypes = ((RowTypeInfo) typeInfo).getFieldTypes();
 
         this.rowAndFieldMapping = rowAndFieldMapping;
+
+        this.needTableName = needTableName;
     }
 
     @Override
     public Row deserialize(byte[] message) throws IOException {
+        if (StringUtils.isNotEmpty(needTableName)) {
+            Map dataMap = JSONObject.parseObject(new String(message, "utf-8"), Map.class);
+            if (!needTableName.equalsIgnoreCase((String) dataMap.get("tablename"))) {
+                return null;
+            }
+        }
 
         if (firstMsg) {
             try {

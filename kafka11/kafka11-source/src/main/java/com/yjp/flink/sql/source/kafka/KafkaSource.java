@@ -71,10 +71,10 @@ public class KafkaSource implements IStreamSourceGener<Table> {
         FlinkKafkaConsumer011<Row> kafkaSrc;
         if (BooleanUtils.isTrue(kafka011SourceTableInfo.getTopicIsPattern())) {
             kafkaSrc = new CustomerKafka011Consumer(Pattern.compile(topicName),
-                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields()), props);
+                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields(), kafka011SourceTableInfo.getNeedTableName()), props);
         } else {
             kafkaSrc = new CustomerKafka011Consumer(topicName,
-                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields()), props);
+                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields(), kafka011SourceTableInfo.getNeedTableName()), props);
         }
 
 

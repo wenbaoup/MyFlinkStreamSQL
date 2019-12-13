@@ -15,6 +15,6 @@ public class TableNamePartitioner<R> extends FlinkKafkaPartitioner<Row> {
         //最后一位是tableName
         String tableName = (String) record.getField(record.getArity() - 1);
         //保证同一个tableName发送到同一个分区
-        return tableName.hashCode() % partitions.length;
+        return Math.abs(tableName.hashCode() % partitions.length);
     }
 }

@@ -97,6 +97,7 @@ public class KafkaSourceParser extends AbsSourceParser {
         kafka11SourceTableInfo.setOffsetReset(MathUtil.getString(props.get(KafkaSourceTableInfo.OFFSETRESET_KEY.toLowerCase())));
         kafka11SourceTableInfo.setTopicIsPattern(MathUtil.getBoolean(props.get(KafkaSourceTableInfo.TOPICISPATTERN_KEY.toLowerCase())));
         kafka11SourceTableInfo.setTimeZone(MathUtil.getString(props.get(KafkaSourceTableInfo.TIME_ZONE_KEY.toLowerCase())));
+        kafka11SourceTableInfo.setNeedTableName(MathUtil.getString(props.get(KafkaSourceTableInfo.NEED_TABLE_NAME.toLowerCase())));
         kafka11SourceTableInfo.check();
         return kafka11SourceTableInfo;
     }
