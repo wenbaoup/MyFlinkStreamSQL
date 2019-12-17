@@ -8,9 +8,9 @@ import com.yjp.flink.sql.side.cache.CacheObj;
 import com.yjp.flink.sql.side.kudu.table.KuduSideTableInfo;
 import io.vertx.core.json.JsonArray;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.calcite.shaded.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.shaded.guava18.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import org.apache.flink.streaming.api.functions.async.ResultFuture;
 import org.apache.flink.table.typeutils.TimeIndicatorTypeInfo;
 import org.apache.flink.types.Row;
@@ -127,21 +127,10 @@ public class KuduAsyncReqRow extends AsyncReqRow {
         JsonArray inputParams = new JsonArray();
         Schema schema = table.getSchema();
 
-//        for (Integer conValIndex : sideInfo.getEqualValIndex()) {
-//            Object equalObj = input.getField(conValIndex);
-//            if (equalObj == null) {
-//                resultFuture.complete(null);
-//                return;
-//            }
-//            //增加过滤条件
-//            scannerBuilder.addPredicate(KuduPredicate.newInListPredicate(schema.getColumn(sideInfo.getEqualFieldList().get(0)), Collections.singletonList(equalObj)));
-//            inputParams.add(equalObj);
-//        }
-
         for (int i = 0; i < sideInfo.getEqualValIndex().size(); i++) {
             Object equalObj = input.getField(sideInfo.getEqualValIndex().get(i));
             if (equalObj == null) {
-//                resultFuture.complete(null);
+                resultFuture.complete(null);
                 return;
             }
             //增加过滤条件
@@ -241,10 +230,10 @@ public class KuduAsyncReqRow extends AsyncReqRow {
                 oneRow.put(sideFieldName, result.getFloat(sideFieldName));
                 break;
             case INT8:
-                oneRow.put(sideFieldName, result.getFloat(sideFieldName));
+                oneRow.put(sideFieldName, (int) result.getByte(sideFieldName));
                 break;
             case INT16:
-                oneRow.put(sideFieldName, result.getShort(sideFieldName));
+                oneRow.put(sideFieldName, (int) result.getShort(sideFieldName));
                 break;
             case INT32:
                 oneRow.put(sideFieldName, result.getInt(sideFieldName));
@@ -292,37 +281,48 @@ public class KuduAsyncReqRow extends AsyncReqRow {
 
         @Override
         public Deferred<List<Row>> call(RowResultIterator results) throws Exception {
-            for (RowResult result : results) {
-                Map<String, Object> oneRow = Maps.newHashMap();
-                for (String sideFieldName1 : sideInfo.getSideSelectFields().split(",")) {
-                    String sideFieldName = sideFieldName1.trim();
-                    ColumnSchema columnSchema = table.getSchema().getColumn(sideFieldName);
-                    if (null != columnSchema) {
-                        setMapValue(columnSchema.getType(), oneRow, sideFieldName, result);
+            try {
+                for (RowResult result : results) {
+                    Map<String, Object> oneRow = Maps.newHashMap();
+                    for (String sideFieldName1 : sideInfo.getSideSelectFields().split(",")) {
+                        String sideFieldName = sideFieldName1.trim();
+                        ColumnSchema columnSchema = table.getSchema().getColumn(sideFieldName);
+                        if (null != columnSchema) {
+                            setMapValue(columnSchema.getType(), oneRow, sideFieldName, result);
+                        }
                     }
+                    Row row = fillData(input, oneRow);
+                    if (openCache()) {
+                        cacheContent.add(oneRow);
+                    }
+                    rowList.add(row);
                 }
-                Row row = fillData(input, oneRow);
-                if (openCache()) {
-                    cacheContent.add(oneRow);
-                }
-                rowList.add(row);
+            } catch (Exception e) {
+                LOG.error("data Transformation error :{}", e);
+                throw new RuntimeException();
             }
+
             if (asyncKuduScanner.hasMoreRows()) {
                 return asyncKuduScanner.nextRows().addCallbackDeferring(this);
             }
-
-            if (rowList.size() > 0) {
-                if (openCache()) {
-                    putCache(key, CacheObj.buildCacheObj(ECacheContentType.MultiLine, cacheContent));
+            try {
+                if (rowList.size() > 0) {
+                    if (openCache()) {
+                        putCache(key, CacheObj.buildCacheObj(ECacheContentType.MultiLine, cacheContent));
+                    }
+                    resultFuture.complete(rowList);
+                } else {
+                    dealMissKey(input, resultFuture);
+                    if (openCache()) {
+                        //放置在putCache的Miss中 一段时间内同一个key都会直接返回
+                        putCache(key, CacheMissVal.getMissKeyObj());
+                    }
                 }
-                resultFuture.complete(rowList);
-            } else {
-                dealMissKey(input, resultFuture);
-                if (openCache()) {
-                    //放置在putCache的Miss中 一段时间内同一个key都会直接返回
-                    putCache(key, CacheMissVal.getMissKeyObj());
-                }
+            } catch (Exception e) {
+                LOG.error("data send error :{}", e);
+                throw new RuntimeException();
             }
+
 
             return null;
         }

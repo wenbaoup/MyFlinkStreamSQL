@@ -20,7 +20,6 @@
 package com.yjp.flink.sql.source.kafka;
 
 
-import com.alibaba.fastjson.JSONObject;
 import com.yjp.flink.sql.source.AbsDeserialization;
 import com.yjp.flink.sql.source.kafka.metric.KafkaTopicPartitionLagMetric;
 import org.apache.commons.lang3.StringUtils;
@@ -97,6 +96,8 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
 
     private String needTableName;
 
+    private Boolean needTableNameFlag;
+
 
     public CustomerJsonDeserialization(TypeInformation<Row> typeInfo, Map<String, String> rowAndFieldMapping, String needTableName) {
         this.typeInfo = typeInfo;
@@ -112,12 +113,6 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
 
     @Override
     public Row deserialize(byte[] message) throws IOException {
-        if (StringUtils.isNotEmpty(needTableName)) {
-            Map dataMap = JSONObject.parseObject(new String(message, "utf-8"), Map.class);
-            if (!needTableName.equalsIgnoreCase((String) dataMap.get("tablename"))) {
-                return null;
-            }
-        }
 
         if (firstMsg) {
             try {
@@ -142,6 +137,18 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
 
             parseTree(root, null);
             Row row = new Row(fieldNames.length);
+
+            if (null == needTableNameFlag) {
+                needTableNameFlag = setNeedTableNameFlag();
+            }
+
+            if (needTableNameFlag) {
+                String[] strings = needTableName.split(":");
+                //判断此条消息是否是需要的消息
+                if (!strings[1].equalsIgnoreCase(objectMapper.treeToValue(getIgnoreCase(strings[0]), String.class))) {
+                    return null;
+                }
+            }
 
             for (int i = 0; i < fieldNames.length; i++) {
                 JsonNode node = getIgnoreCase(fieldNames[i]);
@@ -181,6 +188,27 @@ public class CustomerJsonDeserialization extends AbsDeserialization<Row> {
             //"a": {"b": {"c": "ccc"} } 嵌套json会被解析为a.b.c
             nodeAndJsonNodeMapping.clear();
         }
+    }
+
+    /**
+     * 对needTableName参数校验 判断是否需要对每条数据进行过滤
+     *
+     * @return
+     */
+    private boolean setNeedTableNameFlag() {
+        if (StringUtils.isNotEmpty(needTableName)) {
+            try {
+                //每次只需要一张表 所以是键值对
+                String[] strings = needTableName.split(":");
+                if (strings.length == 2) {
+                    if (getIgnoreCase(strings[0]).isValueNode()) {
+                        return true;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return false;
     }
 
     public JsonNode getIgnoreCase(String key) {

@@ -19,6 +19,7 @@
 
 package com.yjp.flink.sql.side.operator;
 
+import com.yjp.flink.sql.classloader.ClassLoaderManager;
 import com.yjp.flink.sql.classloader.YjpClassLoader;
 import com.yjp.flink.sql.side.AsyncReqRow;
 import com.yjp.flink.sql.side.FieldInfo;
@@ -45,19 +46,20 @@ public class SideAsyncOperator {
 
     private static final String PATH_FORMAT = "%sasyncside";
 
+    private static final String OPERATOR_TYPE = "Async";
+
     //TODO need to set by create table task
     private static int asyncCapacity = 100;
 
     private static AsyncReqRow loadAsyncReq(String sideType, String sqlRootDir, RowTypeInfo rowTypeInfo,
                                             JoinInfo joinInfo, List<FieldInfo> outFieldInfoList, SideTableInfo sideTableInfo) throws Exception {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         String pathOfType = String.format(PATH_FORMAT, sideType);
         String pluginJarPath = PluginUtil.getJarFileDirPath(pathOfType, sqlRootDir);
-        YjpClassLoader dtClassLoader = (YjpClassLoader) classLoader;
-        PluginUtil.addPluginJar(pluginJarPath, dtClassLoader);
-        String className = PluginUtil.getSqlSideClassName(sideType, "side", "Async");
-        return dtClassLoader.loadClass(className).asSubclass(AsyncReqRow.class)
-                .getConstructor(RowTypeInfo.class, JoinInfo.class, List.class, SideTableInfo.class).newInstance(rowTypeInfo, joinInfo, outFieldInfoList, sideTableInfo);
+        String className = PluginUtil.getSqlSideClassName(sideType, "side", OPERATOR_TYPE);
+        return ClassLoaderManager.newInstance(pluginJarPath, (cl) ->
+                cl.loadClass(className).asSubclass(AsyncReqRow.class)
+                        .getConstructor(RowTypeInfo.class, JoinInfo.class, List.class, SideTableInfo.class)
+                        .newInstance(rowTypeInfo, joinInfo, outFieldInfoList, sideTableInfo));
     }
 
     public static DataStream getSideJoinDataStream(DataStream inputStream, String sideType, String sqlRootDir, RowTypeInfo rowTypeInfo, JoinInfo joinInfo,

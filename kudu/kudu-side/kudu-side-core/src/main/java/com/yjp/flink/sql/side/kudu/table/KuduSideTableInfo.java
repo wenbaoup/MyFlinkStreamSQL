@@ -1,7 +1,7 @@
 package com.yjp.flink.sql.side.kudu.table;
 
 import com.yjp.flink.sql.side.SideTableInfo;
-import org.apache.flink.calcite.shaded.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 
 public class KuduSideTableInfo extends SideTableInfo {
 

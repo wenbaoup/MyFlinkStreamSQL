@@ -16,30 +16,25 @@
  * limitations under the License.
  */
 
- 
 
-package com.yjp.flink.sql.source;
-
-import com.yjp.flink.sql.table.SourceTableInfo;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
-
-import java.io.UnsupportedEncodingException;
+package com.yjp.flink.sql.classloader;
 
 /**
- * Reason:
- * Date: 2017/8/2
- * Company: www.yjp.com
- * @author xuchao
+ * company: www.dtstack.com
+ * author: toutian
+ * create: 2019/10/14
  */
-public interface IStreamSourceGener<T> {
+public class ClassLoaderSupplierCallBack {
 
-    /**
-     * @param sourceTableInfo
-     * @param env
-     * @param tableEnv
-     * @return
-     */
-    T genStreamSource(SourceTableInfo sourceTableInfo, StreamExecutionEnvironment env, StreamTableEnvironment tableEnv) throws UnsupportedEncodingException;
+    public static <R> R callbackAndReset(ClassLoaderSupplier<R> supplier, ClassLoader toSetClassLoader) throws Exception {
+        ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(toSetClassLoader);
+        try {
+            return supplier.get(toSetClassLoader);
+        } finally {
+            Thread.currentThread().setContextClassLoader(oldClassLoader);
+        }
+    }
+
 
 }

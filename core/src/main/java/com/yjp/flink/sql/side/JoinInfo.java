@@ -16,15 +16,14 @@
  * limitations under the License.
  */
 
- 
 
 package com.yjp.flink.sql.side;
 
 import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.flink.calcite.shaded.com.google.common.base.Strings;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Join信息
@@ -38,10 +37,19 @@ public class JoinInfo implements Serializable {
 
     private static final long serialVersionUID = -1L;
 
-    //左表是否是维表
+    /**
+     * 左表是否是维表
+     */
     private boolean leftIsSideTable;
 
-    //右表是否是维表
+    /**
+     * 左表是 转换后的中间表
+     */
+    private boolean leftIsMidTable;
+
+    /**
+     * 右表是否是维表
+     */
     private boolean rightIsSideTable;
 
     private String leftTableName;
@@ -64,30 +72,51 @@ public class JoinInfo implements Serializable {
 
     private JoinType joinType;
 
-    public String getSideTableName(){
-        if(leftIsSideTable){
+    /**
+     * 左边是中间转换表，做表映射关系，给替换属性名称使用
+     */
+    private Map<String, String> leftTabMapping;
+
+    public String getSideTableName() {
+        if (leftIsSideTable) {
             return leftTableAlias;
         }
 
         return rightTableAlias;
     }
 
-    public String getNonSideTable(){
-        if(leftIsSideTable){
+    public String getNonSideTable() {
+        if (leftIsSideTable) {
             return rightTableAlias;
         }
 
         return leftTableAlias;
     }
 
-    public String getNewTableName(){
+    public String getNewTableName() {
         //兼容左边表是as 的情况
         String leftStr = leftTableName;
-        leftStr = Strings.isNullOrEmpty(leftStr) ? leftTableAlias : leftStr;
+        leftStr = com.google.common.base.Strings.isNullOrEmpty(leftStr) ? leftTableAlias : leftStr;
         return leftStr + "_" + rightTableName;
     }
 
-    public String getNewTableAlias(){
+    public boolean isLeftIsMidTable() {
+        return leftIsMidTable;
+    }
+
+    public void setLeftIsMidTable(boolean leftIsMidTable) {
+        this.leftIsMidTable = leftIsMidTable;
+    }
+
+    public Map<String, String> getLeftTabMapping() {
+        return leftTabMapping;
+    }
+
+    public void setLeftTabMapping(Map<String, String> leftTabMapping) {
+        this.leftTabMapping = leftTabMapping;
+    }
+
+    public String getNewTableAlias() {
         return leftTableAlias + "_" + rightTableAlias;
     }
 
@@ -155,7 +184,7 @@ public class JoinInfo implements Serializable {
         this.selectFields = selectFields;
     }
 
-    public boolean checkIsSide(){
+    public boolean checkIsSide() {
         return isLeftIsSideTable() || isRightIsSideTable();
     }
 

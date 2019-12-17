@@ -16,30 +16,29 @@
  * limitations under the License.
  */
 
- 
 
-package com.yjp.flink.sql.source;
-
-import com.yjp.flink.sql.table.SourceTableInfo;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
-
-import java.io.UnsupportedEncodingException;
+package com.yjp.flink.sql.classloader;
 
 /**
- * Reason:
- * Date: 2017/8/2
- * Company: www.yjp.com
- * @author xuchao
+ * Represents a supplier of results.
+ *
+ * <p>There is no requirement that a new or distinct result be returned each
+ * time the supplier is invoked.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #get()}.
+ *
+ * @param <T> the type of results supplied by this supplier
+ *
+ * @since 1.8
  */
-public interface IStreamSourceGener<T> {
+@FunctionalInterface
+public interface ClassLoaderSupplier<T> {
 
     /**
-     * @param sourceTableInfo
-     * @param env
-     * @param tableEnv
-     * @return
+     * Gets a result.
+     *
+     * @return a result
      */
-    T genStreamSource(SourceTableInfo sourceTableInfo, StreamExecutionEnvironment env, StreamTableEnvironment tableEnv) throws UnsupportedEncodingException;
-
+    T get(ClassLoader cl) throws Exception;
 }

@@ -6,6 +6,7 @@ import com.yjp.flink.sql.source.kafka.table.KafkaSourceTableInfo;
 import com.yjp.flink.sql.table.SourceTableInfo;
 import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
+import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -17,6 +18,8 @@ import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -43,7 +46,7 @@ public class KafkaSource implements IStreamSourceGener<Table> {
      */
     @SuppressWarnings("rawtypes")
     @Override
-    public Table genStreamSource(SourceTableInfo sourceTableInfo, StreamExecutionEnvironment env, StreamTableEnvironment tableEnv) {
+    public Table genStreamSource(SourceTableInfo sourceTableInfo, StreamExecutionEnvironment env, StreamTableEnvironment tableEnv) throws UnsupportedEncodingException {
 
         KafkaSourceTableInfo kafka011SourceTableInfo = (KafkaSourceTableInfo) sourceTableInfo;
         String topicName = kafka011SourceTableInfo.getTopic();
@@ -69,12 +72,13 @@ public class KafkaSource implements IStreamSourceGener<Table> {
         TypeInformation<Row> typeInformation = new RowTypeInfo(types, kafka011SourceTableInfo.getFields());
 
         FlinkKafkaConsumer011<Row> kafkaSrc;
+        String needTableName = URLDecoder.decode(kafka011SourceTableInfo.getNeedTableName(), Charsets.UTF_8.toString());
         if (BooleanUtils.isTrue(kafka011SourceTableInfo.getTopicIsPattern())) {
             kafkaSrc = new CustomerKafka011Consumer(Pattern.compile(topicName),
-                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields(), kafka011SourceTableInfo.getNeedTableName()), props);
+                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields(), needTableName), props);
         } else {
             kafkaSrc = new CustomerKafka011Consumer(topicName,
-                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields(), kafka011SourceTableInfo.getNeedTableName()), props);
+                    new CustomerJsonDeserialization(typeInformation, kafka011SourceTableInfo.getPhysicalFields(), needTableName), props);
         }
 
 

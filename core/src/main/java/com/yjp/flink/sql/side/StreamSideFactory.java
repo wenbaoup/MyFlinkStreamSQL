@@ -19,6 +19,7 @@
 
 package com.yjp.flink.sql.side;
 
+import com.yjp.flink.sql.classloader.ClassLoaderManager;
 import com.yjp.flink.sql.classloader.YjpClassLoader;
 import com.yjp.flink.sql.enums.ECacheType;
 import com.yjp.flink.sql.table.AbsSideTableParser;
@@ -40,18 +41,15 @@ public class StreamSideFactory {
     public static AbsTableParser getSqlParser(String pluginType, String sqlRootDir, String cacheType) throws Exception {
 
         String sideOperator = ECacheType.ALL.name().equals(cacheType) ? "all" : "async";
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         String pluginJarPath = PluginUtil.getSideJarFileDirPath(pluginType, sideOperator, "side", sqlRootDir);
-
-        YjpClassLoader dtClassLoader = (YjpClassLoader) classLoader;
-        PluginUtil.addPluginJar(pluginJarPath, dtClassLoader);
         String className = PluginUtil.getSqlParserClassName(pluginType, CURR_TYPE);
 
-        Class<?> sideParser = dtClassLoader.loadClass(className);
-        if (!AbsSideTableParser.class.isAssignableFrom(sideParser)) {
-            throw new RuntimeException("class " + sideParser.getName() + " not subClass of AbsSideTableParser");
-        }
-
-        return sideParser.asSubclass(AbsTableParser.class).newInstance();
+        return ClassLoaderManager.newInstance(pluginJarPath, (cl) -> {
+            Class<?> sideParser = cl.loadClass(className);
+            if (!AbsSideTableParser.class.isAssignableFrom(sideParser)) {
+                throw new RuntimeException("class " + sideParser.getName() + " not subClass of AbsSideTableParser");
+            }
+            return sideParser.asSubclass(AbsTableParser.class).newInstance();
+        });
     }
 }

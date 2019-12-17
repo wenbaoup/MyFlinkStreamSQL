@@ -20,7 +20,7 @@
 package com.yjp.flink.sql;
 
 import com.yjp.flink.sql.classloader.ClassLoaderManager;
-import com.yjp.flink.sql.classloader.PluginUtil;
+import com.yjp.flink.sql.config.CalciteConfig;
 import com.yjp.flink.sql.enums.ClusterMode;
 import com.yjp.flink.sql.enums.ECacheType;
 import com.yjp.flink.sql.environment.MyLocalStreamEnvironment;
@@ -37,6 +37,7 @@ import com.yjp.flink.sql.table.TableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
 import com.yjp.flink.sql.udf.*;
 import com.yjp.flink.sql.util.FlinkUtil;
+import com.yjp.flink.sql.util.PluginUtil;
 import com.yjp.flink.sql.util.YjpStringUtil;
 import com.yjp.flink.sql.watermarker.WaterMarkerAssigner;
 import org.apache.calcite.sql.SqlInsert;
@@ -61,7 +62,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.StreamQueryConfig;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.calcite.CalciteConfig;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
@@ -95,16 +95,14 @@ public class Main {
     private static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-
-    private static final int FAILURE_RATE = 3;
     /**
-     * min
+     * 固定重启次数
      */
-    private static final int FAILURE_INTERVAL = 6;
+    private static final int FAILURE_NUM = 15;
     /**
-     * sec
+     * 间隔时间 单位min
      */
-    private static final int DELAY_INTERVAL = 10;
+    private static final int FAILURE_INTERVAL = 1;
 
     public static void main(String[] args) throws Exception {
 
@@ -176,14 +174,6 @@ public class Main {
 
 
         sqlTranslation(localSqlPluginPath, tableEnv, sqlTree, sideTableMap, registerTableCache);
-
-        SideSqlExec sideSqlExec = new SideSqlExec();
-        sideSqlExec.setLocalSqlPluginPath(localSqlPluginPath);
-
-        for (CreateTmpTableParser.SqlParserResult result : sqlTree.getTmpSqlList()) {
-            sideSqlExec.registerTmpTable(result, sideTableMap, tableEnv, registerTableCache);
-        }
-
 
         if (env instanceof MyLocalStreamEnvironment) {
             ((MyLocalStreamEnvironment) env).setClasspaths(ClassLoaderManager.getClassPath());
@@ -344,7 +334,7 @@ public class Main {
         }
     }
 
-    private static StreamExecutionEnvironment getStreamExeEnv(Properties confProperties, String deployMode) throws IOException, NoSuchMethodException {
+    private static StreamExecutionEnvironment getStreamExeEnv(Properties confProperties, String deployMode) throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         StreamExecutionEnvironment env = !ClusterMode.local.name().equals(deployMode) ?
                 StreamExecutionEnvironment.getExecutionEnvironment() :
                 new MyLocalStreamEnvironment();
@@ -355,13 +345,10 @@ public class Main {
         Method method = Configuration.class.getDeclaredMethod("setValueInternal", String.class, Object.class);
         method.setAccessible(true);
 
-        confProperties.forEach((key, val) -> {
-            try {
-                method.invoke(globalJobParameters, key, val);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                e.printStackTrace();
-            }
-        });
+        for (Map.Entry<Object, Object> prop : confProperties.entrySet()) {
+            method.invoke(globalJobParameters, prop.getKey(), prop.getValue());
+        }
+
         ExecutionConfig exeConfig = env.getConfig();
         //env中是否设置过全局变量
         if (exeConfig.getGlobalJobParameters() == null) {
@@ -379,10 +366,9 @@ public class Main {
             env.setBufferTimeout(FlinkUtil.getBufferTimeoutMillis(confProperties));
         }
         //配置重启策略
-        env.setRestartStrategy(RestartStrategies.failureRateRestart(
-                FAILURE_RATE,
-                Time.of(FAILURE_INTERVAL, TimeUnit.MINUTES),
-                Time.of(DELAY_INTERVAL, TimeUnit.SECONDS)
+        env.setRestartStrategy(RestartStrategies.fixedDelayRestart(
+                FAILURE_NUM,
+                Time.of(FAILURE_INTERVAL, TimeUnit.MINUTES)
         ));
         //设置时间策略  默认process time
         FlinkUtil.setStreamTimeCharacteristic(env, confProperties);

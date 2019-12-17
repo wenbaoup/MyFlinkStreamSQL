@@ -20,6 +20,7 @@
 package com.yjp.flink.sql.source;
 
 
+import com.yjp.flink.sql.classloader.ClassLoaderManager;
 import com.yjp.flink.sql.classloader.YjpClassLoader;
 import com.yjp.flink.sql.table.AbsSourceParser;
 import com.yjp.flink.sql.table.SourceTableInfo;
@@ -45,24 +46,16 @@ public class StreamSourceFactory {
 
     public static AbsSourceParser getSqlParser(String pluginType, String sqlRootDir) throws Exception {
 
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        //补充remoteSqlPluginPath的路径 确定加载的路径
         String pluginJarPath = PluginUtil.getJarFileDirPath(String.format(DIR_NAME_FORMAT, pluginType), sqlRootDir);
-
-        YjpClassLoader dtClassLoader = (YjpClassLoader) classLoader;
-        //通过绝对路径加载需要的Jar
-        PluginUtil.addPluginJar(pluginJarPath, dtClassLoader);
-        //typeNoVersion 去掉版本 如kafka11  typeNoVersion=kafka
         String typeNoVersion = YjpStringUtil.getPluginTypeWithoutVersion(pluginType);
-        //得到KafkaSourceParser 的类名
         String className = PluginUtil.getSqlParserClassName(typeNoVersion, CURR_TYPE);
-        //获取子类的CLass对象
-        Class<?> sourceParser = dtClassLoader.loadClass(className);
-        if (!AbsSourceParser.class.isAssignableFrom(sourceParser)) {
-            throw new RuntimeException("class " + sourceParser.getName() + " not subClass of AbsSourceParser");
-        }
-
-        return sourceParser.asSubclass(AbsSourceParser.class).newInstance();
+        return ClassLoaderManager.newInstance(pluginJarPath, (cl) -> {
+            Class<?> sourceParser = cl.loadClass(className);
+            if (!AbsSourceParser.class.isAssignableFrom(sourceParser)) {
+                throw new RuntimeException("class " + sourceParser.getName() + " not subClass of AbsSourceParser");
+            }
+            return sourceParser.asSubclass(AbsSourceParser.class).newInstance();
+        });
     }
 
     /**
@@ -74,23 +67,20 @@ public class StreamSourceFactory {
     public static Table getStreamSource(SourceTableInfo sourceTableInfo, StreamExecutionEnvironment env,
                                         StreamTableEnvironment tableEnv, String sqlRootDir) throws Exception {
 
+
         String sourceTypeStr = sourceTableInfo.getType();
         String typeNoVersion = YjpStringUtil.getPluginTypeWithoutVersion(sourceTypeStr);
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-
         String pluginJarPath = PluginUtil.getJarFileDirPath(String.format(DIR_NAME_FORMAT, sourceTypeStr), sqlRootDir);
         String className = PluginUtil.getGenerClassName(typeNoVersion, CURR_TYPE);
 
-        YjpClassLoader dtClassLoader = (YjpClassLoader) classLoader;
-        PluginUtil.addPluginJar(pluginJarPath, dtClassLoader);
-        Class<?> sourceClass = dtClassLoader.loadClass(className);
+        return ClassLoaderManager.newInstance(pluginJarPath, (cl) -> {
+            Class<?> sourceClass = cl.loadClass(className);
+            if (!IStreamSourceGener.class.isAssignableFrom(sourceClass)) {
+                throw new RuntimeException("class " + sourceClass.getName() + " not subClass of IStreamSourceGener");
+            }
 
-        if (!IStreamSourceGener.class.isAssignableFrom(sourceClass)) {
-            throw new RuntimeException("class " + sourceClass.getName() + " not subClass of IStreamSourceGener");
-        }
-
-        IStreamSourceGener sourceGener = sourceClass.asSubclass(IStreamSourceGener.class).newInstance();
-        Object object = sourceGener.genStreamSource(sourceTableInfo, env, tableEnv);
-        return (Table) object;
+            IStreamSourceGener sourceGener = sourceClass.asSubclass(IStreamSourceGener.class).newInstance();
+            return (Table) sourceGener.genStreamSource(sourceTableInfo, env, tableEnv);
+        });
     }
 }

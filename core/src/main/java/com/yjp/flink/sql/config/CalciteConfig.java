@@ -16,30 +16,20 @@
  * limitations under the License.
  */
 
- 
 
-package com.yjp.flink.sql.source;
+package com.yjp.flink.sql.config;
 
-import com.yjp.flink.sql.table.SourceTableInfo;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.calcite.config.Lex;
+import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.parser.SqlParser.Config;
 
-import java.io.UnsupportedEncodingException;
+public class CalciteConfig {
 
-/**
- * Reason:
- * Date: 2017/8/2
- * Company: www.yjp.com
- * @author xuchao
- */
-public interface IStreamSourceGener<T> {
+    public static Config MYSQL_LEX_CONFIG = SqlParser
+            .configBuilder()
+            .setLex(Lex.MYSQL)
+            .build();
 
-    /**
-     * @param sourceTableInfo
-     * @param env
-     * @param tableEnv
-     * @return
-     */
-    T genStreamSource(SourceTableInfo sourceTableInfo, StreamExecutionEnvironment env, StreamTableEnvironment tableEnv) throws UnsupportedEncodingException;
+
 
 }
