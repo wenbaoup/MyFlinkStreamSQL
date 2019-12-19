@@ -222,40 +222,46 @@ public class KuduAsyncReqRow extends AsyncReqRow {
     }
 
     private void setMapValue(Type type, Map<String, Object> oneRow, String sideFieldName, RowResult result) {
-        switch (type) {
-            case STRING:
-                oneRow.put(sideFieldName, result.getString(sideFieldName));
-                break;
-            case FLOAT:
-                oneRow.put(sideFieldName, result.getFloat(sideFieldName));
-                break;
-            case INT8:
-                oneRow.put(sideFieldName, (int) result.getByte(sideFieldName));
-                break;
-            case INT16:
-                oneRow.put(sideFieldName, (int) result.getShort(sideFieldName));
-                break;
-            case INT32:
-                oneRow.put(sideFieldName, result.getInt(sideFieldName));
-                break;
-            case INT64:
-                oneRow.put(sideFieldName, result.getLong(sideFieldName));
-                break;
-            case DOUBLE:
-                oneRow.put(sideFieldName, result.getDouble(sideFieldName));
-                break;
-            case BOOL:
-                oneRow.put(sideFieldName, result.getBoolean(sideFieldName));
-                break;
-            case UNIXTIME_MICROS:
-                oneRow.put(sideFieldName, result.getTimestamp(sideFieldName));
-                break;
-            case BINARY:
-                oneRow.put(sideFieldName, result.getBinary(sideFieldName));
-                break;
-            default:
-                throw new IllegalArgumentException("Illegal var type: " + type);
+        try {
+            switch (type) {
+                case STRING:
+                    oneRow.put(sideFieldName, result.getString(sideFieldName));
+                    break;
+                case FLOAT:
+                    oneRow.put(sideFieldName, result.getFloat(sideFieldName));
+                    break;
+                case INT8:
+                    oneRow.put(sideFieldName, (int) result.getByte(sideFieldName));
+                    break;
+                case INT16:
+                    oneRow.put(sideFieldName, (int) result.getShort(sideFieldName));
+                    break;
+                case INT32:
+                    oneRow.put(sideFieldName, result.getInt(sideFieldName));
+                    break;
+                case INT64:
+                    oneRow.put(sideFieldName, result.getLong(sideFieldName));
+                    break;
+                case DOUBLE:
+                    oneRow.put(sideFieldName, result.getDouble(sideFieldName));
+                    break;
+                case BOOL:
+                    oneRow.put(sideFieldName, result.getBoolean(sideFieldName));
+                    break;
+                case UNIXTIME_MICROS:
+                    oneRow.put(sideFieldName, result.getTimestamp(sideFieldName));
+                    break;
+                case BINARY:
+                    oneRow.put(sideFieldName, result.getBinary(sideFieldName));
+                    break;
+                default:
+                    throw new RuntimeException("Illegal var type: " + type);
+            }
+        } catch (IllegalArgumentException e) {
+            //在查询kudu时 如果查询出的值为null在会抛出IllegalArgumentException异常  此时默认赋值为null
+            oneRow.put(sideFieldName, null);
         }
+
     }
 
     class GetListRowCB implements Callback<Deferred<List<Row>>, RowResultIterator> {
