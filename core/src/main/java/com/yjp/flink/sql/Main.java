@@ -127,10 +127,6 @@ public class Main {
             addJarFileList = OBJ_MAPPER.readValue(addJarListStr, List.class);
         }
 
-//        ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
-//        YjpClassLoader parentClassloader = new YjpClassLoader(new URL[]{}, threadClassLoader);
-//        Thread.currentThread().setContextClassLoader(parentClassloader);
-
         //StreamExecutionEnvironment 配置
         confProp = URLDecoder.decode(confProp, Charsets.UTF_8.toString());
         Properties confProperties = PluginUtil.jsonStrToObject(confProp, Properties.class);

@@ -20,7 +20,6 @@
 package com.yjp.flink.sql.sink;
 
 import com.yjp.flink.sql.classloader.ClassLoaderManager;
-import com.yjp.flink.sql.classloader.YjpClassLoader;
 import com.yjp.flink.sql.table.AbsTableParser;
 import com.yjp.flink.sql.table.TargetTableInfo;
 import com.yjp.flink.sql.util.PluginUtil;
@@ -60,8 +59,12 @@ public class StreamSinkFactory {
         String pluginType = targetTableInfo.getType();
         String pluginJarDirPath = PluginUtil.getJarFileDirPath(String.format(DIR_NAME_FORMAT, pluginType), localSqlRootDir);
         String typeNoVersion = YjpStringUtil.getPluginTypeWithoutVersion(pluginType);
-        String className = PluginUtil.getGenerClassName(typeNoVersion, CURR_TYPE);
-
+        String className;
+        if ("true".equalsIgnoreCase(targetTableInfo.getIsRetract())) {
+            className = PluginUtil.getRetractGenerClassName(typeNoVersion, CURR_TYPE);
+        } else {
+            className = PluginUtil.getGenerClassName(typeNoVersion, CURR_TYPE);
+        }
         return ClassLoaderManager.newInstance(pluginJarDirPath, (cl) -> {
             Class<?> sinkClass = cl.loadClass(className);
             if (!IStreamSinkGener.class.isAssignableFrom(sinkClass)) {
