@@ -20,7 +20,7 @@ package com.yjp.flink.sql.sink.kafka.retract;
 
 import com.yjp.flink.sql.sink.IStreamSinkGener;
 import com.yjp.flink.sql.sink.kafka.CustomerJsonRowSerializationSchema;
-import com.yjp.flink.sql.sink.kafka.partition.RetractTableNamePartitioner;
+import com.yjp.flink.sql.sink.kafka.partition.TableNamePartitioner;
 import com.yjp.flink.sql.sink.kafka.table.KafkaSinkTableInfo;
 import com.yjp.flink.sql.table.TargetTableInfo;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -36,7 +36,6 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.sinks.RetractStreamTableSink;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
-import org.apache.flink.util.Collector;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -64,7 +63,7 @@ public class RetractKafkaSink implements RetractStreamTableSink<Row>, IStreamSin
     /**
      * Serialization schema for encoding records to Kafka.
      */
-    protected SerializationSchema serializationSchema;
+    protected SerializationSchema<Row> serializationSchema;
 
     /**
      * The schema of the table.
@@ -88,30 +87,24 @@ public class RetractKafkaSink implements RetractStreamTableSink<Row>, IStreamSin
         for (String key : kafka11SinkTableInfo.getKafkaParamKeys()) {
             properties.setProperty(key, kafka11SinkTableInfo.getKafkaParam(key));
         }
-        this.partitioner = Optional.of(new RetractTableNamePartitioner<Row>());
+        this.partitioner = Optional.of(new TableNamePartitioner<Row>());
         this.fieldNames = kafka11SinkTableInfo.getFields();
-        TypeInformation[] types = new TypeInformation[kafka11SinkTableInfo.getFields().length + 1];
+        TypeInformation[] types = new TypeInformation[kafka11SinkTableInfo.getFields().length];
         for (int i = 0; i < kafka11SinkTableInfo.getFieldClasses().length; i++) {
             types[i] = TypeInformation.of(kafka11SinkTableInfo.getFieldClasses()[i]);
         }
-        types[kafka11SinkTableInfo.getFields().length] = TypeInformation.of(Integer.TYPE);
         this.fieldTypes = types;
-        String[] newFieldNames = new String[fieldNames.length + 1];
-        System.arraycopy(fieldNames, 0, newFieldNames, 0, fieldNames.length);
-        newFieldNames[fieldNames.length] = "retract";
-        this.fieldNames = newFieldNames;
+
         TableSchema.Builder schemaBuilder = TableSchema.builder();
         for (int i = 0; i < fieldNames.length; i++) {
             schemaBuilder.field(fieldNames[i], fieldTypes[i]);
         }
         this.schema = schemaBuilder.build();
-
         Integer parallelism = kafka11SinkTableInfo.getParallelism();
         if (parallelism != null) {
             this.parallelism = parallelism;
         }
         this.serializationSchema = new CustomerJsonRowSerializationSchema(getOutputType().getTypeAt(1));
-        System.out.println(Thread.currentThread().getName());
         return this;
     }
 
@@ -122,7 +115,6 @@ public class RetractKafkaSink implements RetractStreamTableSink<Row>, IStreamSin
 
     @Override
     public void emitDataStream(DataStream<Tuple2<Boolean, Row>> dataStream) {
-        System.out.println(Thread.currentThread().getName());
         KafkaTableSinkBase kafkaTableSink = new RetractCustomerKafka11JsonTableSink(
                 schema,
                 topic,
@@ -130,24 +122,21 @@ public class RetractKafkaSink implements RetractStreamTableSink<Row>, IStreamSin
                 partitioner,
                 serializationSchema
         );
-        DataStream<Row> ds = dataStream.flatMap(new FlatMapFunction<Tuple2<Boolean, Row>, Row>() {
-            private static final long serialVersionUID = 3930272552743751908L;
 
-            @Override
-            public void flatMap(Tuple2<Boolean, Row> value, Collector<Row> out) throws Exception {
-                Row oldRow = value.f1;
-                Row newRow = new Row(oldRow.getArity() + 1);
-                for (int i = 0; i < oldRow.getArity(); i++) {
-                    newRow.setField(i, oldRow.getField(i));
-                }
-                if (value.f0) {
-                    newRow.setField(oldRow.getArity(), 1);
-                } else {
-                    newRow.setField(oldRow.getArity(), -1);
-                }
-                out.collect(newRow);
-            }
-        }).setParallelism(parallelism);
+        DataStream<Row> ds = dataStream.flatMap((FlatMapFunction<Tuple2<Boolean, Row>, Row>)
+                (booleanRowTuple2, collector) -> {
+                    if (booleanRowTuple2.f0) {
+                        collector.collect(booleanRowTuple2.f1);
+                    }
+                }).returns(getOutputType().getTypeAt(1)).setParallelism(parallelism);
+
+//        FlinkKafkaProducer011 flinkKafkaProducer011 = new FlinkKafkaProducer011<>(topic,
+//                new KeyedSerializationSchemaWrapper<>(serializationSchema),
+//                properties,
+//                partitioner, FlinkKafkaProducer011.Semantic.EXACTLY_ONCE, 10);
+//
+//        ds.addSink(flinkKafkaProducer011).name(TableConnectorUtils.generateRuntimeName(this.getClass(), getFieldNames()));
+//
 
         kafkaTableSink.emitDataStream(ds);
     }

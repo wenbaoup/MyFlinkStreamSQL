@@ -35,7 +35,7 @@ public abstract class TargetTableInfo extends TableInfo {
 
     private String sinkDataType = "json";
 
-    private String isRetract;
+    private String isExactlyOnce;
 
     public String getSinkDataType() {
         return sinkDataType;
@@ -45,11 +45,11 @@ public abstract class TargetTableInfo extends TableInfo {
         this.sinkDataType = sinkDataType;
     }
 
-    public String getIsRetract() {
-        return isRetract;
+    public String getIsExactlyOnce() {
+        return isExactlyOnce;
     }
 
-    public void setIsRetract(String isRetract) {
-        this.isRetract = isRetract;
+    public void setIsExactlyOnce(String isExactlyOnce) {
+        this.isExactlyOnce = isExactlyOnce;
     }
 }

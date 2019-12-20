@@ -133,7 +133,6 @@ public class Main {
         //根据配置文件设置env
         StreamExecutionEnvironment env = getStreamExeEnv(confProperties, deployMode);
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
-
         //StreamTableEnvironment 配置
         if (tableConfProp != null) {
             tableConfProp = URLDecoder.decode(tableConfProp, Charsets.UTF_8.toString());
@@ -174,7 +173,7 @@ public class Main {
         if (env instanceof MyLocalStreamEnvironment) {
             ((MyLocalStreamEnvironment) env).setClasspaths(ClassLoaderManager.getClassPath());
         }
-
+        System.out.println(env.getExecutionPlan());
         env.execute(name);
         System.out.println("main 方法结束");
     }
@@ -368,9 +367,10 @@ public class Main {
         ));
         //设置时间策略  默认process time
         FlinkUtil.setStreamTimeCharacteristic(env, confProperties);
+        //设置chain策略 判断是否策略 默认是
+        FlinkUtil.setStreamDisableOperatorChaining(env, confProperties);
         //配置checkPoint
         FlinkUtil.openCheckpoint(env, confProperties);
-
         return env;
     }
 }

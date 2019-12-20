@@ -51,10 +51,6 @@ public class CustomerKafka11JsonTableSink extends Kafka011TableSink {
         this.schema = serializationSchema;
     }
 
-//    @Override
-//    protected SinkFunction<Row> createKafkaProducer(String topic, Properties properties, SerializationSchema<Row> serializationSchema, Optional<FlinkKafkaPartitioner<Row>> optional) {
-//        return new CustomerFlinkKafkaProducer011<Row>(topic, serializationSchema, properties);
-//    }
 
     @Override
     protected SinkFunction<Row> createKafkaProducer(String topic, Properties properties, SerializationSchema<Row> serializationSchema, Optional<FlinkKafkaPartitioner<Row>> optional) {

@@ -38,6 +38,7 @@ import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
+import org.junit.rules.TemporaryFolder;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.CompactionStyle;
@@ -45,6 +46,7 @@ import org.rocksdb.DBOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -135,6 +137,14 @@ public class FlinkUtil {
                 //set checkpoint save path on file system, 根据实际的需求设定文件路径,hdfs://, file://
                 env.setStateBackend((StateBackend) new FsStateBackend(backendPath));
             }
+        } else {
+            TemporaryFolder temporaryFolder = new TemporaryFolder(new File("D:\\flink"));
+
+            temporaryFolder.create();
+            String checkpointPath = temporaryFolder.newFolder
+                    ("flink-checkpoints").toURI()
+                    .toString();
+            setRockDBState(checkpointPath, env);
         }
 
     }
@@ -203,6 +213,19 @@ public class FlinkUtil {
 
         if (!flag) {
             throw new RuntimeException("illegal property :" + ConfigConstrant.FLINK_TIME_CHARACTERISTIC_KEY);
+        }
+    }
+
+    /**
+     * 是否开启chain  默认开启
+     * 目前开启的主要原因是 在做end 2 end的exactly once  都chain在一起checkPoint有概率失败
+     *
+     * @param env
+     * @param properties
+     */
+    public static void setStreamDisableOperatorChaining(StreamExecutionEnvironment env, Properties properties) {
+        if (properties.containsKey(ConfigConstrant.FLINK_DISABLE_OPERATOR_CHAINING_KEY)) {
+            env.disableOperatorChaining();
         }
     }
 

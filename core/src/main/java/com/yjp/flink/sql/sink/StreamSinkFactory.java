@@ -60,7 +60,7 @@ public class StreamSinkFactory {
         String pluginJarDirPath = PluginUtil.getJarFileDirPath(String.format(DIR_NAME_FORMAT, pluginType), localSqlRootDir);
         String typeNoVersion = YjpStringUtil.getPluginTypeWithoutVersion(pluginType);
         String className;
-        if ("true".equalsIgnoreCase(targetTableInfo.getIsRetract())) {
+        if ("true".equalsIgnoreCase(targetTableInfo.getIsExactlyOnce())) {
             className = PluginUtil.getRetractGenerClassName(typeNoVersion, CURR_TYPE);
         } else {
             className = PluginUtil.getGenerClassName(typeNoVersion, CURR_TYPE);

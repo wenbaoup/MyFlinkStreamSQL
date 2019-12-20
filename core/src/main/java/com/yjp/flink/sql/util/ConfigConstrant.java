@@ -52,4 +52,8 @@ public class ConfigConstrant {
 
     public static final String FLINK_CHECKPOINT_STATE_BACKEND_KEY = "sql.checkpoint.state.backend.mode";
 
+
+    public static final String FLINK_DISABLE_OPERATOR_CHAINING_KEY = "env.disableoperatorchaining";
+
+
 }

@@ -55,6 +55,8 @@ public class KafkaSink implements RetractStreamTableSink<Row>, IStreamSinkGener<
 
     protected String topic;
 
+    protected int parallelism;
+
     protected Properties properties;
 
     /**
@@ -99,6 +101,10 @@ public class KafkaSink implements RetractStreamTableSink<Row>, IStreamSinkGener<
             schemaBuilder.field(fieldNames[i], fieldTypes[i]);
         }
         this.schema = schemaBuilder.build();
+        Integer parallelism = kafka11SinkTableInfo.getParallelism();
+        if (parallelism != null) {
+            this.parallelism = parallelism;
+        }
         this.serializationSchema = new CustomerJsonRowSerializationSchema(getOutputType().getTypeAt(1));
         return this;
     }
@@ -122,13 +128,7 @@ public class KafkaSink implements RetractStreamTableSink<Row>, IStreamSinkGener<
                     if (booleanRowTuple2.f0) {
                         collector.collect(booleanRowTuple2.f1);
                     }
-                }).returns(getOutputType().getTypeAt(1));
-
-//        DataStream<Row> ds = dataStream.map((Tuple2<Boolean, Row> record) -> {
-//            if (record.f0) {
-//                return record.f1;
-//            }
-//        }).returns(getOutputType().getTypeAt(1));
+                }).returns(getOutputType().getTypeAt(1)).setParallelism(parallelism);
 
 
         kafkaTableSink.emitDataStream(ds);

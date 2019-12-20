@@ -23,12 +23,10 @@ import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Counter;
-import org.apache.flink.metrics.MeterView;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.apache.flink.streaming.connectors.kafka.internals.KeyedSerializationSchemaWrapper;
 import org.apache.flink.streaming.connectors.kafka.partitioner.FlinkKafkaPartitioner;
 
-import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -44,23 +42,20 @@ public class RetractCustomerFlinkKafkaProducer011<Row> extends FlinkKafkaProduce
     private static final long serialVersionUID = -613215751656348171L;
     CustomerJsonRowSerializationSchema schema;
 
-    public RetractCustomerFlinkKafkaProducer011(String topicId, SerializationSchema<Row> serializationSchema, Properties producerConfig, @Nullable Optional<FlinkKafkaPartitioner<Row>> customPartitioner) {
+    public RetractCustomerFlinkKafkaProducer011(String topicId, SerializationSchema<Row> serializationSchema, Properties producerConfig, Optional<FlinkKafkaPartitioner<Row>> customPartitioner) {
+        //  Too many ongoing snapshots. Increase kafka producers pool size or decrease number of concurrent checkpoints.  默认KafakProductPoolSize必须大于1
         super(topicId, new KeyedSerializationSchemaWrapper(serializationSchema), producerConfig, customPartitioner, FlinkKafkaProducer011.Semantic.EXACTLY_ONCE, 5);
         this.schema = (CustomerJsonRowSerializationSchema) serializationSchema;
     }
 
 
     @Override
-    public void open(Configuration configuration) {
-//        producer = getKafkaProducer(this.producerConfig);
-//
+    public void open(Configuration configuration) throws Exception {
+        super.open(configuration);
+
         RuntimeContext ctx = getRuntimeContext();
         Counter counter = ctx.getMetricGroup().counter(MetricConstant.DT_NUM_RECORDS_OUT);
-        MeterView meter = ctx.getMetricGroup().meter(MetricConstant.DT_NUM_RECORDS_OUT_RATE, new MeterView(counter, 20));
 
         schema.setCounter(counter);
-
-//        super.open(configuration);
     }
-
 }
