@@ -35,11 +35,21 @@ public abstract class TargetTableInfo extends TableInfo {
 
     private String sinkDataType = "json";
 
+    private String isRetract;
+
     public String getSinkDataType() {
         return sinkDataType;
     }
 
     public void setSinkDataType(String sinkDataType) {
         this.sinkDataType = sinkDataType;
+    }
+
+    public String getIsRetract() {
+        return isRetract;
+    }
+
+    public void setIsRetract(String isRetract) {
+        this.isRetract = isRetract;
     }
 }

@@ -83,6 +83,11 @@ public class PluginUtil {
         return CLASS_PRE_STR + "." + type.toLowerCase() + "." + pluginTypeName + "." + pluginClassName;
     }
 
+    public static String getRetractGenerClassName(String pluginTypeName, String type) throws IOException {
+        String pluginClassName = upperCaseFirstChar("retract") + upperCaseFirstChar(pluginTypeName) + upperCaseFirstChar(type);
+        return CLASS_PRE_STR + "." + type.toLowerCase() + "." + pluginTypeName + "." + "retract." + pluginClassName;
+    }
+
     public static String getSqlParserClassName(String pluginTypeName, String type) {
 
         String pluginClassName = upperCaseFirstChar(pluginTypeName) + upperCaseFirstChar(type) + "Parser";
