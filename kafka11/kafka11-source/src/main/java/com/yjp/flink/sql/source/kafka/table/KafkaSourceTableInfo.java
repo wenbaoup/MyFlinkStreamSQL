@@ -22,6 +22,10 @@ package com.yjp.flink.sql.source.kafka.table;
 import com.yjp.flink.sql.table.SourceTableInfo;
 import org.apache.flink.util.Preconditions;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Reason:
  * Date: 2018/09/18
@@ -57,6 +61,8 @@ public class KafkaSourceTableInfo extends SourceTableInfo {
     private Boolean topicIsPattern = false;
 
     private String needTableName;
+
+    public Map<String, String> kafkaParam = new HashMap<String, String>();
 
     public Boolean getTopicIsPattern() {
         return topicIsPattern;
@@ -130,6 +136,20 @@ public class KafkaSourceTableInfo extends SourceTableInfo {
     public void setNeedTableName(String needTableName) {
         this.needTableName = needTableName;
     }
+
+
+    public void addKafkaParam(String key, String value) {
+        kafkaParam.put(key, value);
+    }
+
+    public String getKafkaParam(String key) {
+        return kafkaParam.get(key);
+    }
+
+    public Set<String> getKafkaParamKeys() {
+        return kafkaParam.keySet();
+    }
+
 
     @Override
     public boolean check() {

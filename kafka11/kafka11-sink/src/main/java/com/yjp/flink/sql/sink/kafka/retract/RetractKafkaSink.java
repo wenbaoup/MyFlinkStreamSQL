@@ -36,6 +36,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.sinks.RetractStreamTableSink;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
+import org.apache.kafka.clients.producer.ProducerConfig;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -83,6 +84,10 @@ public class RetractKafkaSink implements RetractStreamTableSink<Row>, IStreamSin
 
         properties = new Properties();
         properties.setProperty("bootstrap.servers", kafka11SinkTableInfo.getBootstrapServers());
+        //保证数据有序
+        properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
+        //开启幂等
+        properties.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
 
         for (String key : kafka11SinkTableInfo.getKafkaParamKeys()) {
             properties.setProperty(key, kafka11SinkTableInfo.getKafkaParam(key));

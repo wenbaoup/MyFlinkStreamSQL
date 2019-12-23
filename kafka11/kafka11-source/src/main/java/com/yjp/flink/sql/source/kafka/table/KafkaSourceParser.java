@@ -99,6 +99,14 @@ public class KafkaSourceParser extends AbsSourceParser {
         kafka11SourceTableInfo.setTimeZone(MathUtil.getString(props.get(KafkaSourceTableInfo.TIME_ZONE_KEY.toLowerCase())));
         kafka11SourceTableInfo.setNeedTableName(MathUtil.getString(props.get(KafkaSourceTableInfo.NEED_TABLE_NAME.toLowerCase())));
         kafka11SourceTableInfo.check();
+        //方便设置consumer接受消息最大长度  设置read级别
+        for (String key : props.keySet()) {
+            if (!key.isEmpty() && key.startsWith("kafka.")) {
+                //截取从kafka.后的字符串
+                kafka11SourceTableInfo.addKafkaParam(key.substring(6), props.get(key).toString());
+            }
+        }
+
         return kafka11SourceTableInfo;
     }
 }

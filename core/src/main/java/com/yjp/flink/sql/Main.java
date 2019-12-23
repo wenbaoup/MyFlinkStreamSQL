@@ -163,7 +163,7 @@ public class Main {
         tableEnv.registerFunction("if_null", new IfNullUDF());
         tableEnv.registerFunction("TimestampToLong", new TimestampToLongUdf());
         tableEnv.registerFunction("string_is_not_null", new StringIsNotNullUDF());
-
+        tableEnv.registerFunction("longToDate", new LongToDateTimeUdf());
         //register table schema
         registerTable(sqlTree, env, tableEnv, localSqlPluginPath, remoteSqlPluginPath, sideTableMap, registerTableCache);
 
